@@ -42,14 +42,13 @@ export default function InfoPage() {
             <span className="font-semibold">Friday night</span> — Games night 🎲
           </li>
           <li>
-            <span className="font-semibold">Saturday</span> — Day plans TBD
+            <span className="font-semibold">Saturday</span> — The main event! 🍾
           </li>
           <li>
-            <span className="font-semibold">Saturday night</span> — Staying
-            over 🛏️
+            <span className="font-semibold">Saturday night</span> — Party time! 💃
           </li>
           <li>
-            <span className="font-semibold">Sunday morning</span> — Maybe! ☀️
+            <span className="font-semibold">Sunday morning</span> — Recovery breakfast ☀️
           </li>
         </ul>
         <p className="mt-3 text-xs italic text-gray-400">
