@@ -15,13 +15,13 @@ type DietaryKey =
   | "dietary_vegetarian"
   | "dietary_vegan"
   | "dietary_gluten_free"
-  | "dietary_allergy";
+  | "dietary_other";
 
 const DIETARY_OPTIONS: { key: DietaryKey; label: string }[] = [
   { key: "dietary_vegetarian", label: "Vegetarian" },
   { key: "dietary_vegan", label: "Vegan" },
   { key: "dietary_gluten_free", label: "Gluten-free" },
-  { key: "dietary_allergy", label: "Allergy" },
+  { key: "dietary_other", label: "Other" },
 ];
 
 export default function RsvpPage() {
@@ -39,10 +39,10 @@ export default function RsvpPage() {
     dietary_vegetarian: false,
     dietary_vegan: false,
     dietary_gluten_free: false,
-    dietary_allergy: false,
+    dietary_other: false,
   });
   const [dietaryNotes, setDietaryNotes] = useState("");
-  const [drinksAlcohol, setDrinksAlcohol] = useState(false);
+  const [drinksAlcohol, setDrinksAlcohol] = useState<boolean | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [submitting, setSubmitting] = useState(false);
@@ -94,7 +94,7 @@ export default function RsvpPage() {
           dietary_vegetarian: rsvp.dietary_vegetarian,
           dietary_vegan: rsvp.dietary_vegan,
           dietary_gluten_free: rsvp.dietary_gluten_free,
-          dietary_allergy: rsvp.dietary_allergy,
+          dietary_other: rsvp.dietary_other,
         });
         setDietaryNotes(rsvp.dietary_notes ?? "");
         setDrinksAlcohol(rsvp.drinks_alcohol);

@@ -26,7 +26,7 @@ export type Rsvp = {
   dietary_vegetarian: boolean;
   dietary_vegan: boolean;
   dietary_gluten_free: boolean;
-  dietary_allergy: boolean;
+  dietary_other: boolean;
   dietary_notes: string | null;
   drinks_alcohol: boolean;
   payment_status: PaymentStatus;
