@@ -10,3 +10,26 @@ export type Guest = {
   name: string;
   created_at: string;
 };
+
+export type Session = {
+  id: string;
+  label: string;
+  active: boolean;
+  sort_order: number;
+};
+
+export type PaymentStatus = "unpaid" | "paid";
+
+export type Rsvp = {
+  id: string;
+  guest_id: string;
+  dietary_vegetarian: boolean;
+  dietary_vegan: boolean;
+  dietary_gluten_free: boolean;
+  dietary_allergy: boolean;
+  dietary_notes: string | null;
+  drinks_alcohol: boolean;
+  payment_status: PaymentStatus;
+  submitted_at: string;
+  rsvp_sessions?: { session_id: string }[];
+};
