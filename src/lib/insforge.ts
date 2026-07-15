@@ -5,8 +5,8 @@ export const insforge = createClient({
   anonKey: process.env.NEXT_PUBLIC_INSFORGE_ANON_KEY!,
 });
 
-export type SpikeMessage = {
+export type Guest = {
   id: string;
-  message: string;
+  name: string;
   created_at: string;
 };
