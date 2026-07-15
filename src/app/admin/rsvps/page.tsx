@@ -83,7 +83,7 @@ export default function AdminRsvpsPage() {
     return (
       <main className="mx-auto flex min-h-screen max-w-sm flex-col justify-center gap-6 px-4 py-10">
         <h1 className="text-center text-2xl font-bold text-rose-700">
-          Organizer login
+          Organiser login
         </h1>
         <form
           onSubmit={handleUnlock}
@@ -130,22 +130,33 @@ export default function AdminRsvpsPage() {
   }
 
   const guestsById = new Map(guests.map((guest) => [guest.id, guest]));
-  const sessionsById = new Map(sessions.map((session) => [session.id, session]));
   const respondedGuestIds = new Set(rsvps.map((rsvp) => rsvp.guest_id));
   const notResponded = guests.filter((guest) => !respondedGuestIds.has(guest.id));
+
+  const activeSessions = sessions
+    .filter((session) => session.active)
+    .sort((a, b) => a.sort_order - b.sort_order);
 
   const rows = rsvps
     .map((rsvp) => {
       const guestName = guestsById.get(rsvp.guest_id)?.name ?? "Unknown guest";
-      const sessionLabels = (rsvp.rsvp_sessions ?? [])
-        .map((row) => sessionsById.get(row.session_id))
-        .filter((session): session is Session => Boolean(session))
-        .sort((a, b) => a.sort_order - b.sort_order)
-        .map((session) => session.label);
+      const sessionIds = new Set(
+        (rsvp.rsvp_sessions ?? []).map((row) => row.session_id)
+      );
+      const hasDietaryNeeds = DIETARY_LABELS.some(({ key }) => rsvp[key]);
 
-      return { rsvp, guestName, sessionLabels };
+      return { rsvp, guestName, sessionIds, hasDietaryNeeds };
     })
     .sort((a, b) => a.guestName.localeCompare(b.guestName));
+
+  const sessionCounts = activeSessions.map(
+    (session) => rows.filter((row) => row.sessionIds.has(session.id)).length
+  );
+  const dietaryCount = rows.filter((row) => row.hasDietaryNeeds).length;
+  const alcoholCount = rows.filter((row) => row.rsvp.drinks_alcohol).length;
+  const paidCount = rows.filter(
+    (row) => row.rsvp.payment_status === "paid"
+  ).length;
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
@@ -156,74 +167,97 @@ export default function AdminRsvpsPage() {
         </p>
       </header>
 
-      <div className="space-y-4">
-        {rows.map(({ rsvp, guestName, sessionLabels }) => (
-          <article
-            key={rsvp.id}
-            className="space-y-3 rounded-2xl border border-rose-200 bg-white p-5 shadow-sm"
-          >
-            <div className="flex items-center justify-between gap-3">
-              <h2 className="text-lg font-semibold text-rose-700">
-                {guestName}
-              </h2>
-              <span
-                className={`shrink-0 rounded-full px-2.5 py-1 text-xs font-semibold ${
-                  rsvp.payment_status === "paid"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-amber-100 text-amber-800"
-                }`}
-              >
-                {rsvp.payment_status === "paid" ? "Paid" : "Unpaid"}
-              </span>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Attending
-              </p>
-              <p className="text-sm text-gray-700">
-                {sessionLabels.length > 0
-                  ? sessionLabels.join(", ")
-                  : "No sessions selected"}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Dietary
-              </p>
-              <p className="text-sm text-gray-700">
-                {DIETARY_LABELS.filter(({ key }) => rsvp[key])
-                  .map(({ label }) => label)
-                  .join(", ") || "None"}
-                {rsvp.dietary_notes ? ` — ${rsvp.dietary_notes}` : ""}
-              </p>
-            </div>
-
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
-                Drinks
-              </p>
-              <p className="text-sm text-gray-700">
-                {rsvp.drinks_alcohol ? "Drinks alcohol" : "Non-drinker"}
-              </p>
-            </div>
-          </article>
-        ))}
-
-        {rows.length === 0 && (
-          <p className="text-center text-sm text-gray-400">No RSVPs yet.</p>
-        )}
-      </div>
+      {rows.length > 0 ? (
+        <div className="overflow-x-auto rounded-2xl border border-rose-200 bg-white shadow-sm">
+          <table className="w-full min-w-[760px] text-left text-sm">
+            <thead>
+              <tr className="divide-x divide-rose-100 border-b border-rose-200 bg-rose-50 text-xs font-semibold uppercase tracking-wide text-gray-500">
+                <th className="px-4 py-3">Guest</th>
+                {activeSessions.map((session) => (
+                  <th key={session.id} className="px-4 py-3 text-center">
+                    {session.label}
+                  </th>
+                ))}
+                <th className="px-4 py-3">Dietary</th>
+                <th className="px-4 py-3 text-center">Alcohol</th>
+                <th className="px-4 py-3">Payment</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-rose-100">
+              {rows.map(({ rsvp, guestName, sessionIds }) => (
+                <tr key={rsvp.id} className="divide-x divide-rose-100">
+                  <td className="px-4 py-3 font-semibold text-rose-700">
+                    {guestName}
+                  </td>
+                  {activeSessions.map((session) => (
+                    <td
+                      key={session.id}
+                      className="px-4 py-3 text-center text-gray-700"
+                    >
+                      {sessionIds.has(session.id) ? "✓" : ""}
+                    </td>
+                  ))}
+                  <td className="px-4 py-3 text-gray-700">
+                    {DIETARY_LABELS.filter(({ key }) => rsvp[key])
+                      .map(({ label }) => label)
+                      .join(", ") || "None"}
+                    {rsvp.dietary_notes ? ` — ${rsvp.dietary_notes}` : ""}
+                  </td>
+                  <td className="px-4 py-3 text-center text-gray-700">
+                    {rsvp.drinks_alcohol ? "✓" : ""}
+                  </td>
+                  <td className="px-4 py-3">
+                    <span
+                      className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        rsvp.payment_status === "paid"
+                          ? "bg-green-100 text-green-800"
+                          : "bg-amber-100 text-amber-800"
+                      }`}
+                    >
+                      {rsvp.payment_status === "paid" ? "Paid" : "Unpaid"}
+                    </span>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr className="divide-x divide-rose-100 border-t-2 border-rose-200 bg-rose-50 text-sm font-semibold text-gray-700">
+                <td className="px-4 py-3">Total</td>
+                {sessionCounts.map((count, index) => (
+                  <td
+                    key={activeSessions[index].id}
+                    className="px-4 py-3 text-center"
+                  >
+                    {count}
+                  </td>
+                ))}
+                <td className="px-4 py-3">{dietaryCount}</td>
+                <td className="px-4 py-3 text-center">{alcoholCount}</td>
+                <td className="px-4 py-3">{paidCount} paid</td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+      ) : (
+        <p className="text-center text-sm text-gray-400">No RSVPs yet.</p>
+      )}
 
       {notResponded.length > 0 && (
-        <section className="mt-8 rounded-2xl border border-dashed border-gray-300 p-5">
-          <p className="text-xs font-semibold uppercase tracking-wide text-gray-400">
+        <section className="mt-8">
+          <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-400">
             Haven&rsquo;t RSVP&rsquo;d yet
           </p>
-          <p className="mt-1 text-sm text-gray-600">
-            {notResponded.map((guest) => guest.name).join(", ")}
-          </p>
+          <div className="overflow-x-auto rounded-2xl border border-dashed border-gray-300 bg-white">
+            <table className="w-full text-left text-sm">
+              <tbody className="divide-y divide-gray-100">
+                {notResponded.map((guest) => (
+                  <tr key={guest.id}>
+                    <td className="px-4 py-3 text-gray-700">{guest.name}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
         </section>
       )}
     </main>
