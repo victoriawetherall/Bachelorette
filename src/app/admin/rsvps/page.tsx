@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useState } from "react";
 import { insforge, type Guest, type Rsvp, type Session } from "@/lib/insforge";
 import { isAdminUnlocked, unlockAdmin } from "@/lib/adminAuth";
+import AdminNav from "@/components/AdminNav";
 
 const DIETARY_LABELS: {
   key: "dietary_vegetarian" | "dietary_vegan" | "dietary_gluten_free" | "dietary_other";
@@ -160,6 +161,7 @@ export default function AdminRsvpsPage() {
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
+      <AdminNav active="rsvps" />
       <header className="mb-6 space-y-1 text-center">
         <h1 className="text-2xl font-bold text-rose-700">RSVPs</h1>
         <p className="text-sm text-gray-500">
