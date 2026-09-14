@@ -17,7 +17,7 @@ export default function InfoPage() {
         </h1>
       </header>
 
-      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-rose-200 shadow-sm">
+      <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-rose-200 shadow-sm">
         <Image
           src="/images/liv-disco-rodeo.jpg"
           alt="Liv in a pink cowgirl hat and boots, laughing with a mini pony wearing a sparkly pink bandana"
