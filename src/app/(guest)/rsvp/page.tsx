@@ -258,8 +258,38 @@ export default function RsvpPage() {
       </header>
 
       {justSubmitted && (
-        <section className="space-y-3 rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm">
+        <section className="space-y-4 rounded-2xl border border-rose-200 bg-white p-6 text-center shadow-sm">
           <p className="text-lg font-semibold text-rose-700">{confirmation}</p>
+
+          {estimatedTotal !== null && paymentStatus !== "paid" && (
+            <div className="rounded-xl bg-rose-50 p-4 text-left">
+              <p className="text-center text-xs uppercase tracking-wide text-rose-400">
+                Your final cost
+              </p>
+              <p className="text-center text-2xl font-bold text-rose-700">
+                ${estimatedTotal}
+              </p>
+              <p className="mt-2 text-center text-xs text-gray-500">
+                Please transfer this amount to Vic when you get a chance
+                &mdash; thank you!
+              </p>
+              <div className="mt-3 space-y-1 rounded-lg bg-white px-3 py-2 text-sm text-gray-700">
+                <p>
+                  <span className="font-semibold">Name:</span>{" "}
+                  {process.env.NEXT_PUBLIC_BANK_NAME}
+                </p>
+                <p>
+                  <span className="font-semibold">BSB:</span>{" "}
+                  {process.env.NEXT_PUBLIC_BANK_BSB}
+                </p>
+                <p>
+                  <span className="font-semibold">Account:</span>{" "}
+                  {process.env.NEXT_PUBLIC_BANK_ACCOUNT}
+                </p>
+              </div>
+            </div>
+          )}
+
           <button
             type="button"
             onClick={() => setJustSubmitted(false)}
