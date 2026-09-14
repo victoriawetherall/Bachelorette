@@ -23,7 +23,7 @@ export default function InfoPage() {
 
       <section className="rounded-2xl border border-rose-200 bg-white p-5 shadow-sm">
         <h2 className="mb-2 text-lg font-semibold text-rose-700">
-          🐤 Howdy chickadees!
+          🐤 Howdy chooks!
         </h2>
         <p className="text-sm text-gray-700">
           Dust off those dancing shoes and get ready for a weekend of fine
@@ -90,8 +90,9 @@ export default function InfoPage() {
                 best chook win!
               </li>
               <li>
-                <span className="font-semibold">Evening</span> — Home-made
-                pizzas and a dance party. Start practicing that strut.
+                <span className="font-semibold">Evening</span> — Disco
+                rodeo house party ft cowboy boots and homemade pizzas. Start
+                practicing that strut!
               </li>
             </ul>
           </div>
@@ -135,6 +136,11 @@ export default function InfoPage() {
             extra careful)
           </li>
           <li>Warm clothes for the evening as the region gets cold</li>
+          <li>
+            Cowboy disco dress-up fun! Bring the sparkle, feathers and
+            boot-scooting glam of your dreams (please keep this theme
+            secret from our gorgeous bride!)
+          </li>
           <li>All the other essentials — you know the drill, you&rsquo;re not children!</li>
         </ul>
         <p className="mt-3 text-sm text-gray-700">
@@ -152,6 +158,22 @@ export default function InfoPage() {
             <span className="font-semibold">RSVP</span> — Head over to the
             RSVP tab to let us know your attendance and any dietary
             requirements.
+          </li>
+          <li>
+            <span className="font-semibold">Travel</span> — Korweinguboora
+            is approximately 1.5hrs from Melbourne. If you need a lift, let
+            us know and we will try to find you a car pool. Alternately,
+            catch the V-Line to Ballan, and we can pick you up. Timetable
+            can be found{" "}
+            <a
+              href="https://www.vline.com.au/getattachment/37906cc5-c2d9-48b7-b4ef-5ed168db50e2/Ballarat-timetable-(2)"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="font-semibold text-rose-600 underline"
+            >
+              here
+            </a>
+            .
           </li>
           <li>
             <span className="font-semibold">Memories</span> — We want to see

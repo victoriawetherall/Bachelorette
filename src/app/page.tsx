@@ -76,7 +76,7 @@ export default function LandingPage() {
           October 9–11
         </p>
         <h1 className="text-3xl font-bold text-rose-700">
-          Liv&rsquo;s Bachelorette Weekend 🎉
+          Liv&rsquo;s Hen&rsquo;s Weekend 🎉
         </h1>
       </header>
 

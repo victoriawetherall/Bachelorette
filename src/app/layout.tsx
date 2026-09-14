@@ -8,8 +8,8 @@ const quicksand = Quicksand({
 });
 
 export const metadata: Metadata = {
-  title: "Liv's Bachelorette Weekend",
-  description: "Everything you need for Liv's bachelorette weekend, Oct 9–11.",
+  title: "Liv's Hen's Weekend",
+  description: "Everything you need for Liv's hen's weekend, Oct 9–11.",
 };
 
 export default function RootLayout({
