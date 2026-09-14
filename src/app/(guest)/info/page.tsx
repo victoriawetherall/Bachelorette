@@ -1,5 +1,6 @@
 "use client";
 
+import Image from "next/image";
 import { useGuest } from "@/lib/useGuest";
 
 export default function InfoPage() {
@@ -16,9 +17,15 @@ export default function InfoPage() {
         </h1>
       </header>
 
-      <div className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-2xl border-2 border-dashed border-rose-300 bg-rose-100/60 text-rose-400">
-        <span className="text-4xl">📸</span>
-        <span className="text-sm font-medium">Photo of Liv coming soon!</span>
+      <div className="relative aspect-[4/3] w-full overflow-hidden rounded-2xl border border-rose-200 shadow-sm">
+        <Image
+          src="/images/liv-disco-rodeo.jpg"
+          alt="Liv in a pink cowgirl hat and boots, laughing with a mini pony wearing a sparkly pink bandana"
+          fill
+          priority
+          sizes="(max-width: 512px) 100vw, 512px"
+          className="object-cover"
+        />
       </div>
 
       <section className="rounded-2xl border border-rose-200 bg-white p-5 shadow-sm">
