@@ -18,6 +18,21 @@ export type Session = {
   sort_order: number;
 };
 
+export type BudgetApplication =
+  | "flat"
+  | "friday_night"
+  | "saturday_night"
+  | "saturday_day"
+  | "alcohol"
+  | "bathhouse";
+
+export type BudgetItem = {
+  id: string;
+  label: string;
+  cost_per_person: number;
+  applies_to: BudgetApplication;
+};
+
 export type PaymentStatus = "unpaid" | "paid";
 
 export type Rsvp = {

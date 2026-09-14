@@ -2,7 +2,14 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useGuest } from "@/lib/useGuest";
-import { insforge, type PaymentStatus, type Rsvp, type Session } from "@/lib/insforge";
+import {
+  insforge,
+  type BudgetItem,
+  type PaymentStatus,
+  type Rsvp,
+  type Session,
+} from "@/lib/insforge";
+import { estimateCost } from "@/lib/pricing";
 
 const CONFIRMATIONS = [
   "🎉 You're locked in! Liv is going to cry (happy tears, we hope) when she sees this list.",
@@ -28,6 +35,7 @@ export default function RsvpPage() {
   const guest = useGuest();
 
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [rsvpId, setRsvpId] = useState<string | null>(null);
   const [paymentStatus, setPaymentStatus] = useState<PaymentStatus | null>(
     null
@@ -59,19 +67,23 @@ export default function RsvpPage() {
       setLoading(true);
       setError(null);
 
-      const [{ data: sessionData, error: sessionError }, { data: rsvpData, error: rsvpError }] =
-        await Promise.all([
-          insforge.database
-            .from("sessions")
-            .select("id, label, active, sort_order")
-            .eq("active", true)
-            .order("sort_order", { ascending: true }),
-          insforge.database
-            .from("rsvps")
-            .select("*, rsvp_sessions(session_id)")
-            .eq("guest_id", guest!.id)
-            .maybeSingle(),
-        ]);
+      const [
+        { data: sessionData, error: sessionError },
+        { data: budgetData, error: budgetError },
+        { data: rsvpData, error: rsvpError },
+      ] = await Promise.all([
+        insforge.database
+          .from("sessions")
+          .select("id, label, active, sort_order")
+          .eq("active", true)
+          .order("sort_order", { ascending: true }),
+        insforge.database.from("budget_items").select("*"),
+        insforge.database
+          .from("rsvps")
+          .select("*, rsvp_sessions(session_id)")
+          .eq("guest_id", guest!.id)
+          .maybeSingle(),
+      ]);
 
       if (sessionError) {
         setError(sessionError.message);
@@ -79,6 +91,10 @@ export default function RsvpPage() {
         return;
       }
       setSessions((sessionData as Session[]) ?? []);
+
+      if (!budgetError) {
+        setBudgetItems((budgetData as BudgetItem[]) ?? []);
+      }
 
       if (rsvpError) {
         setError(rsvpError.message);
@@ -110,6 +126,11 @@ export default function RsvpPage() {
   }, [guest]);
 
   const isEditing = useMemo(() => rsvpId !== null, [rsvpId]);
+
+  const estimatedTotal = useMemo(
+    () => estimateCost(budgetItems, sessions, selectedSessions, drinksAlcohol),
+    [budgetItems, sessions, selectedSessions, drinksAlcohol]
+  );
 
   function toggleSession(sessionId: string) {
     setSelectedSessions((prev) => {
@@ -255,9 +276,10 @@ export default function RsvpPage() {
           className="space-y-6 rounded-2xl border border-rose-200 bg-white p-5 shadow-sm"
         >
           <div>
-            <h2 className="mb-3 text-sm font-semibold text-gray-700">
-              What are you coming to?
+            <h2 className="text-sm font-semibold text-gray-700">
+              When can we expect to see your gorgeous face?
             </h2>
+            <p className="mb-3 text-xs text-gray-400">Tick all that apply.</p>
             <div className="space-y-2">
               {sessions.map((session) => (
                 <label
@@ -332,6 +354,21 @@ export default function RsvpPage() {
               </button>
             </div>
           </div>
+
+          {estimatedTotal !== null && (
+            <div className="rounded-xl bg-rose-50 px-4 py-3 text-center">
+              <p className="text-xs uppercase tracking-wide text-rose-400">
+                Your estimated cost
+              </p>
+              <p className="text-2xl font-bold text-rose-700">
+                ${estimatedTotal}
+              </p>
+              <p className="mt-1 text-xs text-gray-400">
+                Based on what you&rsquo;ve ticked above. Covers food, drinks
+                and activities for the weekend.
+              </p>
+            </div>
+          )}
 
           <button
             type="submit"

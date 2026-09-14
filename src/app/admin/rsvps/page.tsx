@@ -1,8 +1,15 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { insforge, type Guest, type Rsvp, type Session } from "@/lib/insforge";
+import {
+  insforge,
+  type BudgetItem,
+  type Guest,
+  type Rsvp,
+  type Session,
+} from "@/lib/insforge";
 import { isAdminUnlocked, unlockAdmin } from "@/lib/adminAuth";
+import { estimateCost } from "@/lib/pricing";
 import AdminNav from "@/components/AdminNav";
 
 const DIETARY_LABELS: {
@@ -22,6 +29,7 @@ export default function AdminRsvpsPage() {
 
   const [guests, setGuests] = useState<Guest[]>([]);
   const [sessions, setSessions] = useState<Session[]>([]);
+  const [budgetItems, setBudgetItems] = useState<BudgetItem[]>([]);
   const [rsvps, setRsvps] = useState<Rsvp[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -40,6 +48,7 @@ export default function AdminRsvpsPage() {
       const [
         { data: guestData, error: guestError },
         { data: sessionData, error: sessionError },
+        { data: budgetData, error: budgetError },
         { data: rsvpData, error: rsvpError },
       ] = await Promise.all([
         insforge.database
@@ -50,6 +59,7 @@ export default function AdminRsvpsPage() {
           .from("sessions")
           .select("id, label, active, sort_order")
           .order("sort_order", { ascending: true }),
+        insforge.database.from("budget_items").select("*"),
         insforge.database.from("rsvps").select("*, rsvp_sessions(session_id)"),
       ]);
 
@@ -62,6 +72,9 @@ export default function AdminRsvpsPage() {
 
       setGuests((guestData as Guest[]) ?? []);
       setSessions((sessionData as Session[]) ?? []);
+      if (!budgetError) {
+        setBudgetItems((budgetData as BudgetItem[]) ?? []);
+      }
       setRsvps((rsvpData as Rsvp[]) ?? []);
       setLoading(false);
     }
@@ -145,8 +158,14 @@ export default function AdminRsvpsPage() {
         (rsvp.rsvp_sessions ?? []).map((row) => row.session_id)
       );
       const hasDietaryNeeds = DIETARY_LABELS.some(({ key }) => rsvp[key]);
+      const estimatedCost = estimateCost(
+        budgetItems,
+        activeSessions,
+        sessionIds,
+        rsvp.drinks_alcohol
+      );
 
-      return { rsvp, guestName, sessionIds, hasDietaryNeeds };
+      return { rsvp, guestName, sessionIds, hasDietaryNeeds, estimatedCost };
     })
     .sort((a, b) => a.guestName.localeCompare(b.guestName));
 
@@ -158,6 +177,10 @@ export default function AdminRsvpsPage() {
   const paidCount = rows.filter(
     (row) => row.rsvp.payment_status === "paid"
   ).length;
+  const estimatedTotalSum = rows.reduce(
+    (sum, row) => sum + (row.estimatedCost ?? 0),
+    0
+  );
 
   return (
     <main className="mx-auto max-w-2xl px-4 py-8">
@@ -183,10 +206,11 @@ export default function AdminRsvpsPage() {
                 <th className="px-4 py-3">Dietary</th>
                 <th className="px-4 py-3 text-center">Alcohol</th>
                 <th className="px-4 py-3">Payment</th>
+                <th className="px-4 py-3 text-right">Est. cost</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-rose-100">
-              {rows.map(({ rsvp, guestName, sessionIds }) => (
+              {rows.map(({ rsvp, guestName, sessionIds, estimatedCost }) => (
                 <tr key={rsvp.id} className="divide-x divide-rose-100">
                   <td className="px-4 py-3 font-semibold text-rose-700">
                     {guestName}
@@ -219,6 +243,9 @@ export default function AdminRsvpsPage() {
                       {rsvp.payment_status === "paid" ? "Paid" : "Unpaid"}
                     </span>
                   </td>
+                  <td className="px-4 py-3 text-right text-gray-700">
+                    {estimatedCost !== null ? `$${estimatedCost}` : "—"}
+                  </td>
                 </tr>
               ))}
             </tbody>
@@ -236,6 +263,7 @@ export default function AdminRsvpsPage() {
                 <td className="px-4 py-3">{dietaryCount}</td>
                 <td className="px-4 py-3 text-center">{alcoholCount}</td>
                 <td className="px-4 py-3">{paidCount} paid</td>
+                <td className="px-4 py-3 text-right">${estimatedTotalSum}</td>
               </tr>
             </tfoot>
           </table>
