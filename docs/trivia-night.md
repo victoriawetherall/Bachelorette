@@ -1,6 +1,15 @@
 # Liv’s trivia night
 
-The trivia backend is installed in the supplied party project's InsForge PostgreSQL database. The supplied 20-question list with four choices per question is installed and voting is open; no test responses or scores were retained. The browser connection, server database connection and private trivia host password are configured in the Git-ignored `.env.local`. The release branch is ready for Victoria to merge into the original party site. A separate copy is being deployed in Harry’s Vercel account against the same party database.
+The trivia backend is installed in the supplied party project's InsForge PostgreSQL database. The supplied 20-question list with four choices per question is installed and voting is open; no test responses or scores were retained. The browser connection, server database connection and private trivia host password are configured in the Git-ignored `.env.local`. A separate copy is live in Harry’s Vercel account against the same party database. Victoria can merge [pull request #1](https://github.com/victoriawetherall/Bachelorette/pull/1) to deploy the changes on the original party site.
+
+## Live deployment
+
+- Guest site: [liv-bachelorette.vercel.app](https://liv-bachelorette.vercel.app), with the survey and team scoring at [/trivia](https://liv-bachelorette.vercel.app/trivia).
+- Private host booth: [/admin/trivia](https://liv-bachelorette.vercel.app/admin/trivia).
+- Zoom presentation: [/present/trivia](https://liv-bachelorette.vercel.app/present/trivia).
+- Vercel project: `liv-bachelorette` in `hwetheralls-projects`; deployed code commit `4a75609`, deployment `dpl_B4QKJRb3G1QBMuLiZHhSs1GEQJ2q`, production status **Ready**. Functions run in Singapore (`sin1`).
+
+The original website remains on Victoria’s Vercel account. Both copies use the same live database, so guest votes and game controls are shared. Run the party from one host booth.
 
 ## How the night works
 
@@ -34,7 +43,7 @@ The local environment file also contains the supplied existing organiser-login, 
 For Victoria’s original site deployment:
 
 1. Merge the trivia feature branch into the original site’s production branch.
-2. Keep its current browser, upload, bank and organiser environment settings.
+2. Keep its current public InsForge URL/key and bank settings.
 3. Add **server-only** `TRIVIA_DATABASE_URL`, `TRIVIA_HOST_PASSWORD`, `ADMIN_PASSWORD`, `UPLOAD_ACCOUNT_EMAIL` and `UPLOAD_ACCOUNT_PASSWORD` from `.env.local` to the deployment environment. Rename the old `NEXT_PUBLIC_ADMIN_PASSWORD` and `NEXT_PUBLIC_UPLOAD_ACCOUNT_*` settings to these private equivalents, then remove the old public password settings. Never prefix them with `NEXT_PUBLIC_`, and never commit `.env.local`.
 4. Build and deploy the new website code. The live database migration is already installed.
 5. Open `/trivia`, `/admin/trivia` and `/present/trivia` on the deployed domain. Confirm a guest can reach the survey and the host can unlock the booth before sharing the guest link.
@@ -46,7 +55,8 @@ The new tables deny access to anonymous and authenticated browser clients. Runti
 - `npm run build` checks the production bundle and TypeScript. Next.js was patched from 15.5.20 to 15.5.27 after the dependency audit identified a [published security issue](https://github.com/advisories/GHSA-2xp9-vwfh-vxw4).
 - `npm run test:trivia` runs the ballot, tie-scoring, PostgreSQL migration, duplicate submission, reveal-lock, manual score, and database permission checks using an isolated PGlite database.
 - A live connection check confirmed the real database → API → mobile survey and host booth flow. Host login/logout worked, invalid and locked writes were rejected, and all trivia response/score tables stayed empty with 16 guests intact.
-- The browser flow was exercised against an isolated PostgreSQL wire-protocol fixture through the real Next.js API routes and `pg` client, including survey saves, tied automatic scores, late prediction locks, score corrections, reload persistence and host logout. Live database rehearsal and public-key permissions were checked separately; the deployed website has not yet been verified.
+- The browser flow was exercised against an isolated PostgreSQL wire-protocol fixture through the real Next.js API routes and `pg` client, including survey saves, tied automatic scores, late prediction locks, score corrections, reload persistence and host logout. Live database rehearsal and public-key permissions were checked separately.
+- The deployed public website passed mobile guest selection, all 20 survey prompts and their choices, leaderboard and presentation checks. Browser drafts were discarded without submitting votes. Organiser and trivia-host logins, signed session cookies, private views and host logout passed against the deployed API. A temporary photo was uploaded through the new server route, then removed from storage and the database. Private passwords and the database URL were confirmed absent from the browser bundle.
 
 ## Previews (isolated sample votes)
 
