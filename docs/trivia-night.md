@@ -1,6 +1,6 @@
 # Liv’s trivia night
 
-The trivia backend is installed in the supplied party project's InsForge PostgreSQL database. The supplied 20-question list with four choices per question is installed and voting is open; no test responses or scores were retained. The browser connection, server database connection and private trivia host password are configured in the Git-ignored `.env.local`. The website changes still need deployment to the existing party site.
+The trivia backend is installed in the supplied party project's InsForge PostgreSQL database. The supplied 20-question list with four choices per question is installed and voting is open; no test responses or scores were retained. The browser connection, server database connection and private trivia host password are configured in the Git-ignored `.env.local`. The release branch is ready for Victoria to merge into the original party site. A separate copy is being deployed in Harry’s Vercel account against the same party database.
 
 ## How the night works
 
@@ -24,16 +24,16 @@ On October 7:
 - The existing database was verified to have 16 guests and its six original application tables.
 - The migration and vote → prediction → reveal → round-score flow were rehearsed in a transaction that rolled back completely. Original application table counts were unchanged.
 - `migrations/20261006220000_add-trivia.sql` was applied atomically using `npm run setup:trivia -- --apply`, with all trivia objects owned by `project_admin`.
-- `migrations/20261007233000_update-party-questions.sql` added the supplied 20-question bank and updated the limits to four choices and 200 Family Feud points. Runtime screens and API validation now read the saved bank.
+- `migrations/20261007233000_update-party-questions.sql` added the supplied 20-question bank and updated the limits to four choices and 200 Family Feud points. Runtime screens and API validation now read the saved bank. The deployment config keeps the API functions in Singapore, near the backend region.
 - The updated game starts with the guest survey open, one Family Feud round, four default team names, and no guest votes, predictions or manual scores. Old browser drafts use a different version and are ignored.
 
 The migrations were applied directly through PostgreSQL rather than through the InsForge CLI migration registry. Do not apply them again through the CLI. `npm run setup:trivia` checks for the current question-bank version and avoids reinstalling it. It can create the original schema and upgrade it to the party list, or upgrade an existing unplayed game; changes roll back unless `--apply` is supplied. The upgrade refuses to proceed if guest votes or Family Feud scoring already exist, so existing responses cannot be silently reassigned to new answers.
 
 The local environment file also contains the supplied existing organiser-login, upload-account and bank settings. `NEXT_PUBLIC_ADMIN_PASSWORD` continues to unlock the original organiser views. Trivia has its own private `TRIVIA_HOST_PASSWORD`, generated and stored locally; copy that value from `.env.local` to unlock `/admin/trivia`, or replace it with your preferred private host password.
 
-For deployment:
+For Victoria’s original site deployment:
 
-1. Use the existing party website's project, not a new unrelated site.
+1. Merge the trivia feature branch into the original site’s production branch.
 2. Keep its current browser, upload, bank and organiser environment settings.
 3. Add **server-only** `TRIVIA_DATABASE_URL` and `TRIVIA_HOST_PASSWORD` from `.env.local` to the deployment environment. Never prefix them with `NEXT_PUBLIC_`, and never commit `.env.local`.
 4. Build and deploy the new website code. The live database migration is already installed.
