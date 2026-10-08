@@ -42,3 +42,5 @@ next-env.d.ts
 
 # Word temporary lock files
 ~$*.docx
+.env*
+!.env.example

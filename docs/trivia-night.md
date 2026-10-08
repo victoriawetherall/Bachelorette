@@ -29,13 +29,13 @@ On October 7:
 
 The migrations were applied directly through PostgreSQL rather than through the InsForge CLI migration registry. Do not apply them again through the CLI. `npm run setup:trivia` checks for the current question-bank version and avoids reinstalling it. It can create the original schema and upgrade it to the party list, or upgrade an existing unplayed game; changes roll back unless `--apply` is supplied. The upgrade refuses to proceed if guest votes or Family Feud scoring already exist, so existing responses cannot be silently reassigned to new answers.
 
-The local environment file also contains the supplied existing organiser-login, upload-account and bank settings. `NEXT_PUBLIC_ADMIN_PASSWORD` continues to unlock the original organiser views. Trivia has its own private `TRIVIA_HOST_PASSWORD`, generated and stored locally; copy that value from `.env.local` to unlock `/admin/trivia`, or replace it with your preferred private host password.
+The local environment file also contains the supplied existing organiser-login, upload-account and bank settings. `ADMIN_PASSWORD` unlocks the original organiser views through a server route. The upload account is also server-only, using `UPLOAD_ACCOUNT_EMAIL` and `UPLOAD_ACCOUNT_PASSWORD`; browsers no longer receive its password. Trivia has its own private `TRIVIA_HOST_PASSWORD`, generated and stored locally; copy that value from `.env.local` to unlock `/admin/trivia`, or replace it with your preferred private host password.
 
 For Victoria’s original site deployment:
 
 1. Merge the trivia feature branch into the original site’s production branch.
 2. Keep its current browser, upload, bank and organiser environment settings.
-3. Add **server-only** `TRIVIA_DATABASE_URL` and `TRIVIA_HOST_PASSWORD` from `.env.local` to the deployment environment. Never prefix them with `NEXT_PUBLIC_`, and never commit `.env.local`.
+3. Add **server-only** `TRIVIA_DATABASE_URL`, `TRIVIA_HOST_PASSWORD`, `ADMIN_PASSWORD`, `UPLOAD_ACCOUNT_EMAIL` and `UPLOAD_ACCOUNT_PASSWORD` from `.env.local` to the deployment environment. Rename the old `NEXT_PUBLIC_ADMIN_PASSWORD` and `NEXT_PUBLIC_UPLOAD_ACCOUNT_*` settings to these private equivalents, then remove the old public password settings. Never prefix them with `NEXT_PUBLIC_`, and never commit `.env.local`.
 4. Build and deploy the new website code. The live database migration is already installed.
 5. Open `/trivia`, `/admin/trivia` and `/present/trivia` on the deployed domain. Confirm a guest can reach the survey and the host can unlock the booth before sharing the guest link.
 

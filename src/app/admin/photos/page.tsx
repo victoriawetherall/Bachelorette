@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { insforge, photoUrl, type Photo } from "@/lib/insforge";
+import { photoUrl, type Photo } from "@/lib/insforge";
 import { isAdminUnlocked, unlockAdmin } from "@/lib/adminAuth";
 import AdminNav from "@/components/AdminNav";
 
@@ -15,7 +15,7 @@ export default function AdminPhotosPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setUnlocked(isAdminUnlocked());
+    void isAdminUnlocked().then(setUnlocked);
   }, []);
 
   useEffect(() => {
@@ -25,33 +25,34 @@ export default function AdminPhotosPage() {
       setLoading(true);
       setError(null);
 
-      const { data, error: fetchError } = await insforge.database
-        .from("photos")
-        .select("*, guests(name)")
-        .eq("category", "pre_weekend")
-        .order("uploaded_at", { ascending: false });
-
-      if (fetchError) {
-        setError(fetchError.message);
-        setLoading(false);
-        return;
+      try {
+        const response = await fetch("/api/admin/photos", {
+          cache: "no-store",
+        });
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.error ?? "Couldn't load photos.");
+        setPhotos(data.photos ?? []);
+      } catch (error) {
+        setError(
+          error instanceof Error ? error.message : "Couldn't load photos.",
+        );
       }
-
-      setPhotos((data as Photo[]) ?? []);
       setLoading(false);
     }
 
     void load();
   }, [unlocked]);
 
-  function handleUnlock(event: FormEvent<HTMLFormElement>) {
+  async function handleUnlock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (passwordInput === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-      unlockAdmin();
+    try {
+      await unlockAdmin(passwordInput);
+      setPasswordInput("");
       setUnlocked(true);
       setAuthError(null);
-    } else {
-      setAuthError("Wrong password.");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Couldn't unlock.");
     }
   }
 
@@ -98,9 +99,7 @@ export default function AdminPhotosPage() {
         </p>
       </header>
 
-      {loading && (
-        <p className="text-center text-sm text-gray-400">Loading…</p>
-      )}
+      {loading && <p className="text-center text-sm text-gray-400">Loading…</p>}
       {error && (
         <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-800">
           {error}
