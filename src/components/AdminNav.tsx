@@ -3,9 +3,10 @@ import Link from "next/link";
 const TABS = [
   { href: "/admin/rsvps", label: "RSVPs" },
   { href: "/admin/photos", label: "Photos" },
+  { href: "/admin/trivia", label: "Trivia" },
 ];
 
-export default function AdminNav({ active }: { active: "rsvps" | "photos" }) {
+export default function AdminNav({ active }: { active: "rsvps" | "photos" | "trivia" }) {
   return (
     <nav className="mb-6 flex justify-center gap-2">
       {TABS.map((tab) => (

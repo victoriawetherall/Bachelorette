@@ -9,14 +9,6 @@ import {
   type Photo,
 } from "@/lib/insforge";
 import { resizeImage } from "@/lib/imageResize";
-import { ensureUploadSession } from "@/lib/uploadAuth";
-
-function sanitizeName(name: string): string {
-  return name
-    .replace(/\.[^/.]+$/, "")
-    .replace(/[^a-zA-Z0-9-_]+/g, "-")
-    .slice(0, 40);
-}
 
 export default function PhotosPage() {
   const guest = useGuest();
@@ -57,7 +49,7 @@ export default function PhotosPage() {
 
   async function handleUpload(
     event: ChangeEvent<HTMLInputElement>,
-    category: "pre_weekend" | "weekend"
+    category: "pre_weekend" | "weekend",
   ) {
     const files = event.target.files;
     if (!files || files.length === 0 || !guest) return;
@@ -68,40 +60,31 @@ export default function PhotosPage() {
     setUploading(true);
     setUploadError(null);
 
-    try {
-      await ensureUploadSession();
-    } catch {
-      setUploadError("Couldn't connect to upload photos right now. Try again in a moment.");
-      setUploading(false);
-      return;
-    }
-
     for (const file of Array.from(files)) {
-      const resized = await resizeImage(file);
-      const path = `${category}/${guest.id}-${Date.now()}-${sanitizeName(
-        file.name
-      )}.jpg`;
-
-      const { error: uploadErr } = await insforge.storage
-        .from("photos")
-        .upload(path, resized);
-
-      if (uploadErr) {
-        setUploadError(uploadErr.message);
-        continue;
-      }
-
-      const { error: insertErr } = await insforge.database
-        .from("photos")
-        .insert({ guest_id: guest.id, category, storage_path: path });
-
-      if (insertErr) {
-        setUploadError(insertErr.message);
-        continue;
-      }
-
-      if (category === "pre_weekend") {
-        setThrowbackPreviews((prev) => [URL.createObjectURL(resized), ...prev]);
+      try {
+        const resized = await resizeImage(file);
+        const form = new FormData();
+        form.set("guest_id", guest.id);
+        form.set("category", category);
+        form.set("file", resized, "photo.jpg");
+        const response = await fetch("/api/photos/upload", {
+          method: "POST",
+          body: form,
+        });
+        const data = await response.json();
+        if (!response.ok)
+          throw new Error(data.error ?? "Couldn't upload that photo.");
+        if (category === "pre_weekend")
+          setThrowbackPreviews((prev) => [
+            URL.createObjectURL(resized),
+            ...prev,
+          ]);
+      } catch (error) {
+        setUploadError(
+          error instanceof Error
+            ? error.message
+            : "Couldn't upload that photo.",
+        );
       }
     }
 
@@ -137,8 +120,8 @@ export default function PhotosPage() {
           </h2>
           <p className="mt-1 text-sm text-gray-500">
             Got an old photo of Liv? Send it our way — we&rsquo;re putting
-            together something fun for the weekend. Only the organizers can
-            see these.
+            together something fun for the weekend. Only the organizers can see
+            these.
           </p>
         </div>
         <label className="block w-full cursor-pointer rounded-xl border border-dashed border-rose-300 px-3 py-3 text-center text-sm font-medium text-rose-600">
@@ -173,8 +156,8 @@ export default function PhotosPage() {
             Weekend photos 🎉
           </h2>
           <p className="mt-1 text-sm text-gray-500">
-            Snapping pics all weekend? Drop them here so everyone leaves with
-            a copy.
+            Snapping pics all weekend? Drop them here so everyone leaves with a
+            copy.
           </p>
         </div>
         <label className="block w-full cursor-pointer rounded-xl border border-dashed border-rose-300 px-3 py-3 text-center text-sm font-medium text-rose-600">

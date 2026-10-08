@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1920" height="1080" viewBox="0 0 1920 1080">
+  <defs>
+    <radialGradient id="glow"><stop stop-color="#78375e"/><stop offset="1" stop-color="#241329"/></radialGradient>
+    <pattern id="tiles" width="80" height="80" patternUnits="userSpaceOnUse"><rect width="80" height="80" fill="#f8b5d1"/><path d="M0 0h40v40H0zM40 40h40v40H40z" fill="#703951"/></pattern>
+    <pattern id="mirror" width="24" height="24" patternUnits="userSpaceOnUse"><rect width="23" height="23" rx="2" fill="#efdbed"/><path d="M1 1h21v10H1z" fill="#fff7fc"/></pattern>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+  <path d="M0 0h240v1080H0zM1680 0h240v1080h-240z" fill="url(#tiles)" opacity=".75"/>
+  <rect x="255" y="25" width="1410" height="1030" rx="100" fill="none" stroke="#e994b7" stroke-width="2" opacity=".5"/>
+  <g fill="#f8b5d1" font-family="Arial, sans-serif" text-anchor="middle"><text x="960" y="100" font-size="28" letter-spacing="12">LIV'S LAST DISCO</text><text x="960" y="184" font-size="66" font-weight="700">THE LIV QUIZ</text><text x="960" y="996" font-size="24" letter-spacing="6">FOUR TEAMS · ONE VERY LOVED BRIDE</text></g>
+  <g stroke="#f8b5d1" fill="none" stroke-width="3"><path d="M350 280v60m-30-30h60m-51-21l42 42m-42 0l42-42M1570 720v80m-40-40h80m-68-28l56 56m-56 0l56-56"/></g>
+  <path d="M1550 0v180" stroke="#edd0e2" stroke-width="3"/>
+  <circle cx="1550" cy="244" r="70" fill="url(#mirror)" stroke="#f8b5d1" stroke-width="3"/>
+  <path d="M1480 244h140M1550 174v140M1500 195q70 50 0 98M1600 195q-70 50 0 98" fill="none" stroke="#98557d" stroke-width="2"/>
+</svg>

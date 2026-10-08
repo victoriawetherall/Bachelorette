@@ -2,7 +2,6 @@
 
 import { FormEvent, useEffect, useState } from "react";
 import {
-  insforge,
   type BudgetItem,
   type Guest,
   type Rsvp,
@@ -13,7 +12,11 @@ import { estimateCost } from "@/lib/pricing";
 import AdminNav from "@/components/AdminNav";
 
 const DIETARY_LABELS: {
-  key: "dietary_vegetarian" | "dietary_vegan" | "dietary_gluten_free" | "dietary_other";
+  key:
+    | "dietary_vegetarian"
+    | "dietary_vegan"
+    | "dietary_gluten_free"
+    | "dietary_other";
   label: string;
 }[] = [
   { key: "dietary_vegetarian", label: "Vegetarian" },
@@ -35,7 +38,7 @@ export default function AdminRsvpsPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    setUnlocked(isAdminUnlocked());
+    void isAdminUnlocked().then(setUnlocked);
   }, []);
 
   useEffect(() => {
@@ -45,51 +48,34 @@ export default function AdminRsvpsPage() {
       setLoading(true);
       setError(null);
 
-      const [
-        { data: guestData, error: guestError },
-        { data: sessionData, error: sessionError },
-        { data: budgetData, error: budgetError },
-        { data: rsvpData, error: rsvpError },
-      ] = await Promise.all([
-        insforge.database
-          .from("guests")
-          .select("id, name, created_at")
-          .order("name", { ascending: true }),
-        insforge.database
-          .from("sessions")
-          .select("id, label, active, sort_order")
-          .order("sort_order", { ascending: true }),
-        insforge.database.from("budget_items").select("*"),
-        insforge.database.from("rsvps").select("*, rsvp_sessions(session_id)"),
-      ]);
-
-      const firstError = guestError ?? sessionError ?? rsvpError;
-      if (firstError) {
-        setError(firstError.message);
-        setLoading(false);
-        return;
+      try {
+        const response = await fetch("/api/admin/rsvps", { cache: "no-store" });
+        const data = await response.json();
+        if (!response.ok) throw new Error(data.error ?? "Couldn't load RSVPs.");
+        setGuests((data.guests as Guest[]) ?? []);
+        setSessions((data.sessions as Session[]) ?? []);
+        setBudgetItems((data.budget as BudgetItem[]) ?? []);
+        setRsvps((data.rsvps as Rsvp[]) ?? []);
+      } catch (error) {
+        setError(
+          error instanceof Error ? error.message : "Couldn't load RSVPs.",
+        );
       }
-
-      setGuests((guestData as Guest[]) ?? []);
-      setSessions((sessionData as Session[]) ?? []);
-      if (!budgetError) {
-        setBudgetItems((budgetData as BudgetItem[]) ?? []);
-      }
-      setRsvps((rsvpData as Rsvp[]) ?? []);
       setLoading(false);
     }
 
     void load();
   }, [unlocked]);
 
-  function handleUnlock(event: FormEvent<HTMLFormElement>) {
+  async function handleUnlock(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (passwordInput === process.env.NEXT_PUBLIC_ADMIN_PASSWORD) {
-      unlockAdmin();
+    try {
+      await unlockAdmin(passwordInput);
+      setPasswordInput("");
       setUnlocked(true);
       setAuthError(null);
-    } else {
-      setAuthError("Wrong password.");
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : "Couldn't unlock.");
     }
   }
 
@@ -145,7 +131,9 @@ export default function AdminRsvpsPage() {
 
   const guestsById = new Map(guests.map((guest) => [guest.id, guest]));
   const respondedGuestIds = new Set(rsvps.map((rsvp) => rsvp.guest_id));
-  const notResponded = guests.filter((guest) => !respondedGuestIds.has(guest.id));
+  const notResponded = guests.filter(
+    (guest) => !respondedGuestIds.has(guest.id),
+  );
 
   const activeSessions = sessions
     .filter((session) => session.active)
@@ -155,14 +143,14 @@ export default function AdminRsvpsPage() {
     .map((rsvp) => {
       const guestName = guestsById.get(rsvp.guest_id)?.name ?? "Unknown guest";
       const sessionIds = new Set(
-        (rsvp.rsvp_sessions ?? []).map((row) => row.session_id)
+        (rsvp.rsvp_sessions ?? []).map((row) => row.session_id),
       );
       const hasDietaryNeeds = DIETARY_LABELS.some(({ key }) => rsvp[key]);
       const estimatedCost = estimateCost(
         budgetItems,
         activeSessions,
         sessionIds,
-        rsvp.drinks_alcohol
+        rsvp.drinks_alcohol,
       );
 
       return { rsvp, guestName, sessionIds, hasDietaryNeeds, estimatedCost };
@@ -170,16 +158,16 @@ export default function AdminRsvpsPage() {
     .sort((a, b) => a.guestName.localeCompare(b.guestName));
 
   const sessionCounts = activeSessions.map(
-    (session) => rows.filter((row) => row.sessionIds.has(session.id)).length
+    (session) => rows.filter((row) => row.sessionIds.has(session.id)).length,
   );
   const dietaryCount = rows.filter((row) => row.hasDietaryNeeds).length;
   const alcoholCount = rows.filter((row) => row.rsvp.drinks_alcohol).length;
   const paidCount = rows.filter(
-    (row) => row.rsvp.payment_status === "paid"
+    (row) => row.rsvp.payment_status === "paid",
   ).length;
   const estimatedTotalSum = rows.reduce(
     (sum, row) => sum + (row.estimatedCost ?? 0),
-    0
+    0,
   );
 
   return (

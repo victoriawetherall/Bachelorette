@@ -7,6 +7,7 @@ const TABS = [
   { href: "/info", label: "Info", emoji: "📍" },
   { href: "/rsvp", label: "RSVP", emoji: "💌" },
   { href: "/photos", label: "Photos", emoji: "📸" },
+  { href: "/trivia", label: "Trivia", emoji: "🪩" },
 ];
 
 export default function BottomNav() {
