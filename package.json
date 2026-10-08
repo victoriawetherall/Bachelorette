@@ -6,16 +6,21 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "test:trivia": "node --test tests/trivia.test.mjs",
+    "setup:trivia": "node scripts/setup-trivia.mjs"
   },
   "dependencies": {
     "@insforge/sdk": "^1.0.0",
-    "next": "15.5.20",
+    "next": "15.5.27",
+    "pg": "^8.23.1",
     "react": "19.0.0",
     "react-dom": "19.0.0"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.8",
     "@types/node": "^22.0.0",
+    "@types/pg": "^8.23.1",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "autoprefixer": "^10.4.20",
