@@ -202,13 +202,16 @@ export function validSurvey(
   if (!value || typeof value !== "object" || Array.isArray(value)) return false;
   const answers = value as Record<string, unknown>;
   return (
-    Object.keys(answers).length === questions.length &&
-    questions.every(
-      (q) =>
-        Number.isInteger(answers[q.id]) &&
-        Number(answers[q.id]) >= 0 &&
-        Number(answers[q.id]) < q.options.length,
-    )
+    Object.keys(answers).length > 0 &&
+    Object.entries(answers).every(([id, answer]) => {
+      const question = questions.find((q) => q.id === id);
+      return (
+        question !== undefined &&
+        Number.isInteger(answer) &&
+        Number(answer) >= 0 &&
+        Number(answer) < question.options.length
+      );
+    })
   );
 }
 

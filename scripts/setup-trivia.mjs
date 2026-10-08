@@ -75,9 +75,21 @@ try {
       "liv-party-20-v2",
       "Inspect the existing question bank before replacing it.",
     );
-    await client.query("ROLLBACK");
+    await client.query("SET LOCAL ROLE project_admin");
+    await client.query(
+      await readFile(
+        new URL(
+          "../migrations/20261008021000_partial-survey.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    await client.query(apply ? "COMMIT" : "ROLLBACK");
     console.log(
-      "The 20-question party list is already installed; nothing changed.",
+      apply
+        ? "Partial-answer saving installed; existing votes and game state preserved."
+        : "Partial-answer migration rehearsal passed and rolled back.",
     );
   } else {
     await client.query("SET LOCAL ROLE project_admin");
@@ -85,6 +97,15 @@ try {
       await readFile(
         new URL(
           "../migrations/20261007233000_update-party-questions.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
+    await client.query(
+      await readFile(
+        new URL(
+          "../migrations/20261008021000_partial-survey.sql",
           import.meta.url,
         ),
         "utf8",

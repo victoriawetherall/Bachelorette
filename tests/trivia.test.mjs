@@ -25,7 +25,7 @@ const { scoreFeud, teamTotals } = await loadTypeScript(
 );
 const ballot = Object.fromEntries(FEUD_QUESTIONS.map((q) => [q.id, 0]));
 
-test("ballots require every question and only valid option indices", () => {
+test("partial ballots accept skipped questions and require valid options", () => {
   assert.equal(FEUD_QUESTIONS.length, 20);
   assert.equal(new Set(FEUD_QUESTIONS.map((q) => q.id)).size, 20);
   assert.equal(validSurvey(ballot), true);
@@ -35,7 +35,11 @@ test("ballots require every question and only valid option indices", () => {
   assert.equal(validSurvey({ ...ballot, extra: 1 }), false);
   const incomplete = { ...ballot };
   delete incomplete.animal;
-  assert.equal(validSurvey(incomplete), false);
+  assert.equal(validSurvey(incomplete), true);
+  assert.equal(validSurvey({ late: 0 }), true);
+  assert.equal(validSurvey({}), false);
+  assert.equal(validSurvey(null), false);
+  assert.equal(validSurvey({ missing: 0 }), false);
 });
 
 test("both tied top predictions score, only after reveal, and zero-vote answers never score", () => {
@@ -98,6 +102,15 @@ test("PostgreSQL migration preserves the survey and prediction locks, upserts sc
         "utf8",
       ),
     );
+    await db.exec(
+      await readFile(
+        new URL(
+          "../migrations/20261008021000_partial-survey.sql",
+          import.meta.url,
+        ),
+        "utf8",
+      ),
+    );
     await db.exec("COMMIT");
     const guest = "10000000-0000-4000-8000-000000000001";
     const feud = "f0000000-0000-4000-8000-000000000001";
@@ -138,7 +151,10 @@ test("PostgreSQL migration preserves the survey and prediction locks, upserts sc
         for (const invalid of [
           { ...ballot, late: 4 },
           { ...ballot, late: 1.5 },
-          Object.fromEntries(Object.entries(ballot).slice(0, 15)),
+          {},
+          { unknown: 1 },
+          { late: null },
+          { late: "1" },
         ]) {
           assert.equal(
             (
@@ -165,6 +181,54 @@ test("PostgreSQL migration preserves the survey and prediction locks, upserts sc
       async () => {
         await assert.rejects(action("close_survey"), /Collect at least one/);
         await assert.rejects(action("reveal", 1), /Close the guest survey/);
+        // Save five independent answers, leave the rest skipped, then correct one.
+        const partial = Object.fromEntries(Object.entries(ballot).slice(0, 5));
+        for (const [id, answer] of Object.entries(partial)) {
+          await db.query("SELECT public.trivia_submit_survey($1,$2::jsonb)", [
+            guest,
+            JSON.stringify({ [id]: answer }),
+          ]);
+        }
+        await db.query("SELECT public.trivia_submit_survey($1,$2::jsonb)", [
+          guest,
+          JSON.stringify({ late: 2 }),
+        ]);
+        assert.deepEqual(
+          (
+            await db.query(
+              "SELECT answers FROM public.trivia_votes WHERE guest_id=$1",
+              [guest],
+            )
+          ).rows[0].answers,
+          { ...partial, late: 2 },
+        );
+        const partialResults = FEUD_QUESTIONS.map((q) =>
+          rankAnswers(q, [{ ...partial, late: 2 }]),
+        );
+        assert.equal(
+          partialResults[0].find(
+            (a) => a.option === FEUD_QUESTIONS[0].options[2],
+          ).votes,
+          1,
+        );
+        assert.equal(
+          partialResults[5].reduce((sum, a) => sum + a.votes, 0),
+          0,
+        );
+        // A repeated save cannot add a second guest response or duplicate votes.
+        await db.query("SELECT public.trivia_submit_survey($1,$2::jsonb)", [
+          guest,
+          JSON.stringify(partial),
+        ]);
+        assert.equal(
+          (
+            await db.query(
+              "SELECT count(*)::integer n FROM public.trivia_votes",
+            )
+          ).rows[0].n,
+          1,
+        );
+
         await db.query("select public.trivia_submit_survey($1, $2::jsonb)", [
           guest,
           JSON.stringify(ballot),

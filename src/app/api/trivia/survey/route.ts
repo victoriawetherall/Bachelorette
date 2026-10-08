@@ -37,7 +37,9 @@ export async function POST(request: Request) {
     const guestId = await requireGuest(body.guest_id);
     const questions = await getQuestions();
     if (!validSurvey(body.answers, questions))
-      throw new TriviaError("Please choose one answer for every question.");
+      throw new TriviaError(
+        "Please choose a valid answer for at least one question.",
+      );
     const { error } = await triviaQuery(
       "SELECT public.trivia_submit_survey($1, $2::jsonb)",
       [guestId, JSON.stringify(body.answers)],
@@ -49,11 +51,20 @@ export async function POST(request: Request) {
       );
     if (error?.message.includes("Invalid survey"))
       throw new TriviaError(
-        "The question list has changed. Refresh and answer every question.",
+        "The question list has changed. Refresh and try again.",
         409,
       );
     checkDb(error);
-    return NextResponse.json({ saved: true });
+    // The atomic database merge preserves answers saved from other requests.
+    const saved = await triviaQuery(
+      "SELECT answers FROM public.trivia_votes WHERE guest_id=$1",
+      [guestId],
+    );
+    checkDb(saved.error);
+    return NextResponse.json({
+      saved: true,
+      answers: saved.data?.[0]?.answers,
+    });
   } catch (error) {
     return apiError(error);
   }

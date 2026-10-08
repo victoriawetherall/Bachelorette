@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { GuestIdentity } from "@/lib/identity";
 import {
   FEUD_QUESTIONS,
-  validSurvey,
   type SurveyAnswers,
   type FeudQuestion,
 } from "@/lib/trivia/questions";
@@ -28,6 +27,8 @@ export default function Survey({
   const [saved, setSaved] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [finished, setFinished] = useState(false);
+  const pending = useRef<SurveyAnswers>({});
   const [draftWarning, setDraftWarning] = useState(false);
   const storageKey = `bacparty:feud-draft:${guest.id}:${questionSetVersion}`;
   const questionSignature = JSON.stringify(questions);
@@ -35,7 +36,7 @@ export default function Survey({
   useEffect(() => {
     let stopped = false;
     const draftQuestions = JSON.parse(questionSignature) as FeudQuestion[];
-    let draft: SurveyAnswers | null = null;
+    let draft: SurveyAnswers = {};
     try {
       const raw = localStorage.getItem(storageKey);
       if (raw) {
@@ -51,62 +52,100 @@ export default function Survey({
               )
               .map((q) => [q.id, parsed[q.id]]),
           );
-          setAnswers(draft);
         }
       }
     } catch {
       setDraftWarning(true);
     }
-    triviaRequest<SurveyResponse>(
-      `/api/trivia/survey?guest=${encodeURIComponent(guest.id)}`,
-    )
-      .then((response) => {
+    pending.current = draft;
+    setAnswers(draft);
+    setLoading(true);
+    setSaved(false);
+    setError(null);
+    async function load() {
+      try {
+        const response = await triviaRequest<SurveyResponse>(
+          `/api/trivia/survey?guest=${encodeURIComponent(guest.id)}`,
+        );
         if (stopped) return;
-        if (response.answers && !draft) {
-          setAnswers(response.answers);
+        setAnswers({ ...response.answers, ...draft });
+        setSaved(Object.keys(response.answers ?? {}).length > 0);
+        if (response.open && Object.keys(draft).length > 0) {
+          setSaved(false);
+          const result = await triviaRequest<{ answers: SurveyAnswers }>(
+            "/api/trivia/survey",
+            {
+              guest_id: guest.id,
+              answers: draft,
+            },
+          );
+          if (stopped) return;
+          pending.current = {};
+          setAnswers(result.answers);
           setSaved(true);
+          try {
+            if (localStorage.getItem(storageKey) === JSON.stringify(draft))
+              localStorage.removeItem(storageKey);
+          } catch {
+            /* Saved on the server. */
+          }
         }
-      })
-      .catch((e) => {
-        if (!stopped) setError(e.message);
-      })
-      .finally(() => {
+      } catch (e) {
+        if (!stopped)
+          setError(
+            e instanceof Error ? e.message : "Couldn't load your answers.",
+          );
+      } finally {
         if (!stopped) setLoading(false);
-      });
+      }
+    }
+    void load();
     return () => {
       stopped = true;
     };
   }, [guest.id, storageKey, questionSignature]);
 
-  function choose(value: number) {
-    const next = { ...answers, [questions[index].id]: value };
-    setAnswers(next);
-    setSaved(false);
-    try {
-      localStorage.setItem(storageKey, JSON.stringify(next));
-    } catch {
-      setDraftWarning(true);
-    }
-  }
-  async function submit() {
+  async function savePending() {
+    if (Object.keys(pending.current).length === 0) return;
+    const patch = { ...pending.current };
     setBusy(true);
+    setSaved(false);
     setError(null);
     try {
-      await triviaRequest("/api/trivia/survey", {
-        guest_id: guest.id,
-        answers,
-      });
+      const result = await triviaRequest<{ answers: SurveyAnswers }>(
+        "/api/trivia/survey",
+        {
+          guest_id: guest.id,
+          answers: patch,
+        },
+      );
+      pending.current = {};
+      setAnswers(result.answers);
       setSaved(true);
       try {
-        localStorage.removeItem(storageKey);
+        if (localStorage.getItem(storageKey) === JSON.stringify(patch))
+          localStorage.removeItem(storageKey);
       } catch {
-        /* The server has saved it. */
+        /* Saved on the server. */
       }
     } catch (e) {
       setError(e instanceof Error ? e.message : "Couldn't save. Please retry.");
     } finally {
       setBusy(false);
     }
+  }
+
+  function choose(value: number) {
+    if (loading || busy) return;
+    const id = questions[index].id;
+    setAnswers({ ...answers, [id]: value });
+    pending.current = { ...pending.current, [id]: value };
+    try {
+      localStorage.setItem(storageKey, JSON.stringify(pending.current));
+    } catch {
+      setDraftWarning(true);
+    }
+    void savePending();
   }
 
   const question = questions[index];
@@ -124,6 +163,29 @@ export default function Survey({
         </p>
       </section>
     );
+  if (finished && !error)
+    return (
+      <section className="trivia-card space-y-4 text-center">
+        <h2 className="text-2xl font-bold text-rose-800">
+          Thanks for voting! 💭
+        </h2>
+        <p>
+          {answered > 0
+            ? `Your ${answered} ${answered === 1 ? "answer is" : "answers are"} saved and will count in the game.`
+            : "You haven't answered any questions yet."}{" "}
+          Skipped questions cast no vote.
+        </p>
+        <button
+          className="trivia-secondary"
+          onClick={() => {
+            setFinished(false);
+            setIndex(0);
+          }}
+        >
+          Review my answers
+        </button>
+      </section>
+    );
   return (
     <section className="trivia-card space-y-5">
       <div>
@@ -134,7 +196,8 @@ export default function Survey({
         <p className="mt-2 text-sm leading-relaxed text-gray-600">
           Hi {guest.name}! Pick the answer that feels most like Liv. Vote
           independently and keep your choices secret — Liv will guess what we
-          all said.
+          all said. Each answer saves as soon as you choose it. Skip any
+          question you like.
         </p>
       </div>
       {loading ? <p role="status">Checking your saved answers…</p> : null}
@@ -189,46 +252,68 @@ export default function Survey({
         ) : (
           <button
             className="trivia-primary flex-1"
-            disabled={!validSurvey(answers, questions) || busy || loading}
-            onClick={() => void submit()}
+            disabled={busy || loading || Boolean(error)}
+            onClick={() => setFinished(true)}
           >
-            {busy
-              ? "Saving…"
-              : saved
-                ? "Update my answers"
-                : "Submit my secret votes"}
+            Finish
           </button>
         )}
       </div>
-      {index === questions.length - 1 && !validSurvey(answers, questions) ? (
+      {answers[question.id] === undefined ? (
         <button
-          className="text-sm font-semibold text-rose-600 underline"
+          className="min-h-11 w-full text-sm font-semibold text-rose-600 underline"
+          disabled={loading || busy}
           onClick={() =>
-            setIndex(questions.findIndex((q) => answers[q.id] === undefined))
+            index < questions.length - 1
+              ? setIndex(index + 1)
+              : setFinished(true)
           }
         >
-          Go to an unanswered question
+          Skip question →
         </button>
       ) : null}
-      {saved ? (
-        <p
-          role="status"
-          className="rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800"
-        >
-          Your secret votes are saved! You can update them until the host closes
-          voting.
-        </p>
-      ) : (
+      <p
+        role="status"
+        className={
+          saved && !busy && !error
+            ? "rounded-xl bg-emerald-50 p-3 text-sm text-emerald-800"
+            : "text-xs text-gray-500"
+        }
+      >
+        {busy
+          ? "Saving your answer…"
+          : error
+            ? "Some answers may not be saved yet."
+            : saved
+              ? "Your answers are saved! You can stop here or keep going, and update them until voting closes."
+              : "Answers save automatically. Skipped questions cast no vote."}
+      </p>
+      {draftWarning ? (
         <p className="text-xs text-gray-500">
-          {draftWarning
-            ? "Draft storage is unavailable on this device. Keep this page open until you submit."
-            : "Your draft stays on this device. Tap Submit at the end to send your votes."}
+          This device cannot keep a backup. Check that your answer is saved
+          before leaving.
         </p>
-      )}
+      ) : null}
       {error ? (
-        <p role="alert" className="trivia-error">
+        <div role="alert" className="trivia-error">
           {error}
-        </p>
+          {Object.keys(pending.current).length > 0 ? (
+            <button
+              disabled={busy}
+              className="ml-2 font-semibold underline"
+              onClick={() => void savePending()}
+            >
+              Retry save
+            </button>
+          ) : (
+            <button
+              className="ml-2 font-semibold underline"
+              onClick={() => window.location.reload()}
+            >
+              Reload
+            </button>
+          )}
+        </div>
       ) : null}
     </section>
   );
