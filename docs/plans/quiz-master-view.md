@@ -1,6 +1,10 @@
 # Plan C: Quiz Master View (the TV)
 
-**Status:** plan, not built. Target: tonight's quiz (Fri Oct 9).
+**Status:** built on `trivia-2`, not yet deployed. All four build-order pieces
+are done, nothing cut. Checked at 1920×1080 and 1280×720 against the local
+rehearsal: no scrolling in any phase. Scores show inside each round's own view
+rather than a separate bottom strip, and Family Feud only shows them from the
+reveal onwards. Long content (Trivia stories, 15 advice cards) shrinks to fit.
 
 ## Setup on the night
 
