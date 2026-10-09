@@ -40,7 +40,7 @@ function Host({ round, accessKey, lock }: { round: LiveRound; accessKey: string;
   const pending = state?.teams.some((team) => team.submitted && team.correct === null);
   const correctText = state?.options.find((option) => option.key === state.correct_answer)?.text;
   return <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
-    <header className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-sm font-semibold text-rose-500">Host controls · private</p><h1 className="text-3xl font-bold text-rose-800">{LIVE_ROUNDS[round].title}</h1></div><div className="flex gap-4 text-sm font-semibold text-rose-600"><Link href={`/display/${round}`} target="_blank" rel="noopener noreferrer" className="underline">Open Zoom display ↗</Link><button type="button" onClick={lock} className="underline">Lock controls</button></div></header>
+    <header className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-sm font-semibold text-rose-500">Host controls · private</p><h1 className="text-3xl font-bold text-rose-800">{LIVE_ROUNDS[round].title}</h1></div><div className="flex gap-4 text-sm font-semibold text-rose-600"><Link href="/tv" target="_blank" rel="noopener noreferrer" className="underline">Open TV ↗</Link><button type="button" onClick={lock} className="underline">Lock controls</button></div></header>
     <QuizRoundNav host />
     <QuizConnection error={connectionError} loading={!state} refresh={refresh} />
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-red-800">{error}</p>}

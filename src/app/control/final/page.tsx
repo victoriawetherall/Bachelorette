@@ -29,7 +29,7 @@ function FinalHost({ accessKey, lock }: { accessKey: string; lock: () => void })
   const nextReveal = state ? state.places - state.revealed_places : 0;
   const allAwarded = !!state && state.awards.length === state.places;
   return <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
-    <header className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-wide text-rose-500">Host controls · private</p><h1 className="text-3xl font-bold text-rose-800">Final Round 💍</h1></div><div className="flex flex-wrap gap-4 text-sm font-semibold text-rose-600"><Link href="/display/final" target="_blank" rel="noopener noreferrer" className="underline">Open TV display ↗</Link><button type="button" onClick={lock} className="underline">Lock controls</button></div></header>
+    <header className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-wide text-rose-500">Host controls · private</p><h1 className="text-3xl font-bold text-rose-800">Final Round 💍</h1></div><div className="flex flex-wrap gap-4 text-sm font-semibold text-rose-600"><Link href="/tv" target="_blank" rel="noopener noreferrer" className="underline">Open TV ↗</Link><button type="button" onClick={lock} className="underline">Lock controls</button></div></header>
     <QuizRoundNav host />
     <QuizConnection error={connectionError} loading={!state} refresh={refresh} />
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{error}</p>}
