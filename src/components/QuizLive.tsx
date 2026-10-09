@@ -1,5 +1,5 @@
 import { formatPoints } from "@/lib/feud";
-import Image from "next/image";
+import FacebookPosts from "./FacebookPosts";
 import { type LiveState } from "@/lib/liveQuiz";
 
 export function LiveScores({ state, large = false }: { state: LiveState; large?: boolean }) {
@@ -31,15 +31,7 @@ export default function QuizLive({ state, large = false, selected, onSelect, dis
     <section className="space-y-4 rounded-3xl border border-rose-200 bg-white p-5">
       <p className="text-sm font-semibold uppercase tracking-wide text-rose-500">Question {state.question_number} of {state.total_questions}</p>
       <h2 className={`${large ? "text-3xl md:text-4xl" : "text-xl"} font-bold text-rose-900`}>{state.prompt}</h2>
-      {state.slug === "fake" && <div className={`grid gap-4 ${large ? "md:grid-cols-2" : ""}`}>
-        {state.options.map((option) => {
-          const correct = revealed && state.correct_answer === option.key;
-          return <button key={option.key} type="button" disabled={disabled || !onSelect} aria-pressed={selected === option.key} onClick={() => onSelect?.(option.key)} className={`overflow-hidden rounded-xl border-2 text-left disabled:cursor-default ${correct ? "border-emerald-500" : selected === option.key ? "border-rose-600" : "border-rose-100"}`}>
-            <span className={`block px-3 py-2 font-bold ${correct ? "bg-emerald-100 text-emerald-900" : "bg-rose-50 text-rose-800"}`}>{option.key}{correct && " · This was the fake!"}{selected === option.key && !revealed && " · Your team’s pick"}</span>
-            <Image src={option.image!} alt={`Facebook post ${option.key}`} width={680} height={240} sizes={large ? "50vw" : "(max-width: 700px) 90vw, 600px"} quality={80} className={large ? "block h-auto max-h-72 w-full bg-neutral-800 object-contain" : "block h-auto w-full"} />
-          </button>;
-        })}
-      </div>}
+      {state.slug === "fake" && <FacebookPosts key={state.current_question_id} state={state} large={large} selected={selected} onSelect={onSelect} disabled={disabled} />}
       {state.slug === "family" && <div className={`grid gap-3 ${large ? "md:grid-cols-2" : ""}`}>
         {state.options.map((option) => {
           const correct = revealed && state.correct_answer === option.key;
