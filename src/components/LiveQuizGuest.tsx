@@ -10,7 +10,7 @@ import { useGuest } from "@/lib/useGuest";
 import { useQuizResource } from "@/lib/useQuizResource";
 import { LIVE_ROUNDS, readLiveState, submitLiveAnswer, type LiveRound } from "@/lib/liveQuiz";
 
-export default function LiveQuizGuest({ round }: { round: LiveRound }) {
+export default function LiveQuizGuest({ round, embedded = false }: { round: LiveRound; embedded?: boolean }) {
   const guest = useGuest();
   const read = useCallback(() => readLiveState(round, guest?.id ?? null), [round, guest?.id]);
   const { state, error: connectionError, refresh } = useQuizResource(read);
@@ -27,9 +27,10 @@ export default function LiveQuizGuest({ round }: { round: LiveRound }) {
     catch (err) { setError(err instanceof Error ? err.message : "Couldn’t save your answer."); refresh(); }
     finally { setBusy(false); }
   }
-  return <main className="mx-auto max-w-2xl space-y-5 px-4 py-8">
+  const Wrapper = embedded ? "section" : "main";
+  return <Wrapper className={embedded ? "space-y-5" : "mx-auto max-w-2xl space-y-5 px-4 py-8"}>
     <header className="text-center"><p className="text-sm font-semibold text-rose-500">Round {LIVE_ROUNDS[round].number} · Liv’s hens quiz</p><h1 className="text-3xl font-bold text-rose-800">{LIVE_ROUNDS[round].title}</h1>{team && <p className="mt-2 text-sm text-rose-700">{team.name} · {guest?.name}</p>}</header>
-    <QuizRoundNav />
+    {!embedded && <QuizRoundNav />}
     <QuizConnection error={connectionError} loading={!state} refresh={refresh} />
     {team && <QuizCaptain captain={{ team_id: team.id, guest_id: team.captain_id, name: team.captain_name }} guestId={guest?.id} isLiv={guest?.id === state?.liv_guest_id} refresh={refresh} />}
     {state && <QuizLive state={state} selected={answer} onSelect={setAnswer} disabled={!canSubmit || busy || !!connectionError} />}
@@ -39,6 +40,6 @@ export default function LiveQuizGuest({ round }: { round: LiveRound }) {
       <p className="text-sm text-gray-600">{team?.submitted ? `Saved team answer: ${team.answer}. Your captain can change it until Harry locks answers.` : canSubmit ? round === "fake" ? "Tap a post above, then submit. You can change it until Harry locks answers." : round === "family" ? "Tap an answer above, then submit. You can change it until Harry locks answers." : "Type one shared answer. You can change it until Harry locks answers." : "Discuss your answer with your captain."}</p>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}
     </section>}
-    <Link href={`/?next=${encodeURIComponent(`/quiz/${round}`)}`} className="block text-center text-sm text-rose-600 underline">Change your name</Link>
-  </main>;
+    {!embedded && <Link href={`/?next=${encodeURIComponent(`/quiz/${round}`)}`} className="block text-center text-sm text-rose-600 underline">Change your name</Link>}
+  </Wrapper>;
 }

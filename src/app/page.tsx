@@ -13,7 +13,7 @@ import {
 
 function guestDestination(): string {
   const next = new URLSearchParams(window.location.search).get("next");
-  return next && ["/info", "/rsvp", "/photos", "/teams", "/quiz", "/quiz/pre-vote", "/quiz/fake", "/quiz/stories", "/quiz/ben", "/quiz/family", "/quiz/scoreboard"].includes(next) ? next : "/info";
+  return next && ["/info", "/rsvp", "/photos", "/teams", "/quiz", "/quiz/pre-vote", "/quiz/play", "/quiz/fake", "/quiz/stories", "/quiz/ben", "/quiz/family", "/quiz/scoreboard"].includes(next) ? next : "/info";
 }
 
 export default function LandingPage() {
@@ -106,10 +106,10 @@ export default function LandingPage() {
             Not you?
           </button>
           <Link
-            href="/quiz"
+            href="/quiz/pre-vote"
             className="block rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
           >
-            Meet your team & join the quiz 🪩
+            Answer the quiz questions 🪩
           </Link>
         </section>
       ) : (

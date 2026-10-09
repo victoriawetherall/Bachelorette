@@ -1,6 +1,8 @@
 # Plan B: "Let the games begin" guest flow
 
-**Status:** plan, not built. Target: tonight's quiz (Fri Oct 9).
+**Status:** built (`20261009210000_guest-flow.sql`, `/quiz/play`), tested in
+`tests/guest-flow.integration.cjs`. Trivia is the `family` round (Family Trivia);
+Story Time is out of the running order.
 
 ## The problem
 

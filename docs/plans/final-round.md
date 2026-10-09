@@ -1,6 +1,7 @@
 # Plan A: Final Round (blind marriage advice)
 
-**Status:** plan, not built. Target: tonight's quiz (Fri Oct 9).
+**Status:** built. A1 is live (`20261009200000_marriage-advice.sql`); A2 is
+`20261009220000_final-round.sql`, tested in `tests/final.integration.cjs`.
 
 ## The idea
 
@@ -22,7 +23,7 @@ place is revealed. That matters because Harry's laptop may also be driving the T
 
 ## A1. Collect advice
 
-### Database (`migrations/20261009180000_final-round.sql`, part 1)
+### Database (`migrations/20261009200000_marriage-advice.sql`)
 
 ```
 quiz_advice
@@ -53,7 +54,7 @@ Once deployed, post in the group chat that advice is open.
 
 ## A2. Run the round
 
-### Database (part 2, same migration)
+### Database (`migrations/20261009220000_final-round.sql`)
 
 ```
 quiz_final            singleton

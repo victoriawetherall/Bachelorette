@@ -1,6 +1,7 @@
 "use client";
 
 import Image from "next/image";
+import Link from "next/link";
 import { useGuest } from "@/lib/useGuest";
 
 export default function InfoPage() {
@@ -16,6 +17,13 @@ export default function InfoPage() {
           {guest ? `Hey ${guest.name}, here's the plan! 🎉` : "Here's the plan! 🎉"}
         </h1>
       </header>
+
+      <Link
+        href="/quiz/pre-vote"
+        className="block rounded-2xl bg-gradient-to-r from-rose-500 to-fuchsia-500 px-4 py-4 text-center text-lg font-bold text-white shadow-lg hover:from-rose-600 hover:to-fuchsia-600"
+      >
+        Answer the quiz questions 🪩
+      </Link>
 
       <div className="relative aspect-[3/4] w-full overflow-hidden rounded-2xl border border-rose-200 shadow-sm">
         <Image
