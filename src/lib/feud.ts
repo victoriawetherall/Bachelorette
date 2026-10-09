@@ -42,4 +42,7 @@ export const hostFeudAction = (key: string, action: string, questionId: number |
   rpc("feud_host_action", { p_key: key, p_action: action, p_question_id: questionId });
 export const correctFeudAnswer = (key: string, questionId: number, option: AnswerKey) =>
   rpc("feud_correct_choice", { p_key: key, p_question_id: questionId, p_option: option });
-export const formatPoints = (points: number) => Number(points).toLocaleString("en-AU", { maximumFractionDigits: 2 });
+export const readAdvice = (guestId: string) => rpc<string | null>("quiz_advice_mine", { p_guest_id: guestId });
+export const saveAdvice = (guestId: string, body: string) =>
+  rpc("quiz_advice_save", { p_guest_id: guestId, p_body: body });
+export const formatPoints =(points: number) => Number(points).toLocaleString("en-AU", { maximumFractionDigits: 2 });

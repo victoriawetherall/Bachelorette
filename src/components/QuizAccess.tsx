@@ -3,7 +3,7 @@
 import { type FormEvent, type ReactNode, useEffect, useState } from "react";
 import { checkFeudAccess } from "@/lib/feud";
 
-export default function QuizAccess({ role, children }: { role: "host" | "liv"; children: (key: string, lock: () => void) => ReactNode }) {
+export default function QuizAccess({ role, children }: { role: "host"; children: (key: string, lock: () => void) => ReactNode }) {
   const storageKey = `bacparty:feud:${role}`;
   const [key, setKey] = useState<string | null>(null);
   const [input, setInput] = useState("");
@@ -30,10 +30,10 @@ export default function QuizAccess({ role, children }: { role: "host" | "liv"; c
   }
   if (key) return children(key, () => { sessionStorage.removeItem(storageKey); setKey(null); });
   return <main className="mx-auto max-w-sm space-y-5 px-4 py-12">
-    <h1 className="text-center text-2xl font-bold text-rose-800">{role === "host" ? "Quiz host controls" : "Liv’s quiz screen 💖"}</h1>
-    <p className="text-center text-sm text-gray-600">{role === "host" ? "Enter your private host code." : "Harry has your access code. Your choices stay hidden until the reveal."}</p>
+    <h1 className="text-center text-2xl font-bold text-rose-800">Quiz host controls</h1>
+    <p className="text-center text-sm text-gray-600">Enter your private host code.</p>
     <form onSubmit={unlock} className="space-y-4 rounded-2xl border border-rose-200 bg-white p-5">
-      <label htmlFor="quiz-access" className="block text-sm font-semibold text-gray-700">{role === "host" ? "Host" : "Liv’s"} access code</label>
+      <label htmlFor="quiz-access" className="block text-sm font-semibold text-gray-700">Host access code</label>
       <input id="quiz-access" type="password" autoComplete="current-password" required value={input} onChange={(event) => setInput(event.target.value)} className="w-full rounded-xl border border-rose-200 p-3 text-base focus:outline-rose-500" />
       <button type="submit" disabled={busy} className="w-full rounded-xl bg-rose-600 p-3 font-semibold text-white disabled:opacity-50">{busy ? "Checking…" : "Open quiz"}</button>
       {error && <p role="alert" className="text-sm text-red-700">{error}</p>}

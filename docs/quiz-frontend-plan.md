@@ -12,16 +12,16 @@ Guests answer the 20 supplied questions individually. Every selection saves to
 the backend; refresh resumes at the first unanswered question. Guests can review
 or change predictions until the host closes voting or starts the round.
 
-During the round, Liv chooses and locks one answer on her own screen. Harry
-reveals it from the host controls. The guest and Zoom views show her pick, the
-vote distribution, matching names and updated team totals. Harry advances to the
+During the round, the room sees the question and four options on the shared
+display. Liv calls out her answer, and Harry taps it on the host controls and
+confirms. Confirming reveals it immediately. Liv has no separate screen. The guest and Zoom views then show
+her pick, the vote distribution, matching names and updated team totals. Harry advances to the
 next question, can show the leaderboard, and can correct a revealed answer.
 
 | Screen | Purpose |
 | --- | --- |
 | `/quiz` | Team, pre-vote progress and live reveals |
 | `/quiz/pre-vote` | Individual saved predictions |
-| `/quiz/liv` | Liv's private live choices |
 | `/control` | Harry's controls, completion status and corrections |
 | `/display` | Shared Zoom question, reveal and leaderboard |
 | `/teams` and `/admin/teams` | Roster and organiser copy tools |
@@ -31,7 +31,7 @@ three eligible voters on Team 2 and four on the other teams. Before starting,
 the host can choose adjusted scoring: `4 × matches / eligible voters`.
 Missing votes score zero. Ties remain tied. No rank conversion is implemented.
 
-Host and Liv access codes are checked by the database. Unrevealed choices and
+The host access code is checked by the database. Unrevealed choices and
 vote distributions are withheld from public game state. Guest identity retains
 the existing choose-your-name model. See [Family Feud setup](family-feud.md)
 for deployment status, access codes, operating steps and verification.

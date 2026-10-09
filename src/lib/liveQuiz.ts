@@ -1,6 +1,11 @@
 import { rpc } from "./feud";
 
-export type LiveRound = "fake" | "stories";
+export type LiveRound = "fake" | "stories" | "family";
+export const LIVE_ROUNDS: Record<LiveRound, { number: number; title: string }> = {
+  fake: { number: 2, title: "Real or Fake" },
+  stories: { number: 3, title: "Story Time" },
+  family: { number: 5, title: "Family Trivia" },
+};
 export type Captain = { team_id: string; guest_id: string | null; name: string | null };
 export type LiveTeam = {
   id: string; name: string; team_number: number; captain_id: string | null;
@@ -13,15 +18,16 @@ export type LiveState = {
   current_question_id: number | null; question_number: number; total_questions: number;
   revealed_count: number; points_per_correct: number; my_team_id: string | null;
   liv_guest_id: string; updated_at: string; prompt: string | null;
-  options: { key: string; image: string }[]; correct_answer: string | null;
+  options: { key: string; image?: string; text?: string }[]; correct_answer: string | null;
+  story?: string | null;
   teams: LiveTeam[];
   questions?: { id: number; position: number; prompt: string; answer: string; enabled: boolean; revealed: boolean }[];
 };
 export type OverallTeam = {
   id: string; name: string; team_number: number;
-  feud: number; fake: number; stories: number; ben: number; total: number;
+  feud: number; fake: number; stories: number; ben: number; family: number; total: number;
 };
-export const isLiveRound = (value: string): value is LiveRound => value === "fake" || value === "stories";
+export const isLiveRound = (value: string): value is LiveRound => value in LIVE_ROUNDS;
 export const readCaptains = () => rpc<Captain[]>("quiz_captains");
 export const claimCaptain = (guestId: string) => rpc("quiz_claim_captain", { p_guest_id: guestId });
 export const setCaptain = (key: string, teamId: string, guestId: string) =>

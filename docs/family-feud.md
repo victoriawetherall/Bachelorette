@@ -19,7 +19,7 @@ The frontend has **not** been deployed. Deploy it before sharing the quiz link.
 2. Deploy this frontend to the existing app using its existing InsForge URL and
    anonymous key. No new environment variables or service keys are needed.
 3. Open `/quiz`, confirm the roster and pre-vote screen, then open `/control`
-   and `/quiz/liv` with the access codes below. Avoid starting the live round
+   with the host access code below. Avoid starting the live round
    during the connection check: starting closes voting and there is no reset
    button. The full rehearsal was performed in a separate test database.
 
@@ -49,15 +49,16 @@ Private host and Liv codes are saved in `.quiz/access-codes.json` in this local
 worktree. This folder is ignored by Git. The migration contains only their
 SHA-256 hashes. Keep a private copy of the codes before deleting the worktree.
 
-Give Liv only her code. Harry uses the host code, which can also enter Liv's
-choice if she calls it out. These codes are separate from the existing organiser
+Only the host code is used. Liv has no screen or code. She calls out her
+answers and Harry enters them. The Liv code still exists in the database, but
+nothing uses it. These codes are separate from the existing organiser
 password. Each screen remembers its code for the current browser tab session;
 use its lock button to clear it. Never put codes in URLs or shared screenshots.
 
 Guests keep the existing choose-your-name identity flow; this is an honour
 system, not authenticated individual accounts. Anyone choosing a name can access
-that person's saved predictions while using the app. Host and Liv commands are
-separately protected in the database. Public game state does not include an
+that person's saved predictions while using the app. Host commands are protected
+in the database. Public game state does not include an
 unrevealed Liv choice or aggregate vote distribution.
 
 ## Before the event
@@ -76,18 +77,20 @@ Scoring cannot be changed after the round starts. Equal scores remain tied.
 
 ## Live sequence
 
-1. Harry opens `/control`; share only the `/display` tab over Zoom.
-2. Liv opens `/quiz/liv` and enters her code. Guests can follow `/quiz`.
-3. Harry selects **Lock votes & start question 1**. All predictions lock.
-4. Liv taps an option and **Lock in my choice**. Her answer stays hidden from
-   the shared display. Harry can see that she is ready.
-5. Harry selects **Reveal & score**. Her answer, vote counts, matching guest
-   names and team totals appear automatically on the other screens.
-6. Harry can show the leaderboard, then select **Next question**. Repeat through
+1. Harry opens `/control`; share only the `/display` tab over Zoom. Guests can
+   follow along on `/quiz`. Liv does not need a phone or a screen.
+2. Harry selects **Lock votes & start question 1**. All predictions lock.
+3. The whole room sees the question and its four options on the display. Liv
+   shouts out the one she picks.
+4. Harry taps that option on `/control` and selects **Confirm & reveal**. Her
+   answer, vote counts, matching guest names and team totals appear
+   automatically on the other screens.
+5. Harry can show the leaderboard, then select **Next question**. Repeat through
    question 20 and select **Finish round**.
 
-The host can let Liv choose again before a reveal, enter an answer on her behalf,
-or correct a revealed answer. Corrections recalculate totals from saved votes.
+If Harry taps the wrong option, use **Correct a revealed answer**. If a reveal
+fails partway, the controls show **Reveal & score** to retry, or **Change
+answer** to pick again. Corrections recalculate totals from saved votes.
 Repeated reveal requests never add points twice. Refreshing restores the current
 round; screens show a reconnect message if they cannot reach the backend.
 

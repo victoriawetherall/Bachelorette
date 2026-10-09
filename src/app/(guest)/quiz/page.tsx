@@ -44,16 +44,15 @@ export default function QuizPage() {
         <h2 className="text-xl font-bold text-rose-800">How well do you know Liv?</h2>
         <p className="text-sm text-gray-600">Pick your answers to {state.total_questions} questions before the quiz. Liv will choose her answers live. Each match helps your team!</p>
         {!isLiv && answered !== null && <p className="text-sm font-semibold text-rose-700">{answered} of {state.total_questions} answers saved</p>}
-        <Link href={isLiv ? "/quiz/liv" : "/quiz/pre-vote"} className="block rounded-xl bg-rose-600 px-4 py-3 text-center font-semibold text-white hover:bg-rose-700">
-          {isLiv ? "Open Liv’s screen 💖" : !state.voting_open ? "View your locked answers" : answered === state.total_questions ? "Review your pre-votes" : answered ? "Continue your pre-votes" : "Answer the pre-quiz"}
-        </Link>
-        {isLiv && <p className="text-sm text-gray-600">You get to choose on the night. Your teammates are voting beforehand!</p>}
+        {!isLiv && <Link href="/quiz/pre-vote" className="block rounded-xl bg-rose-600 px-4 py-3 text-center font-semibold text-white hover:bg-rose-700">
+          {!state.voting_open ? "View your locked answers" : answered === state.total_questions ? "Review your pre-votes" : answered ? "Continue your pre-votes" : "Answer the pre-quiz"}
+        </Link>}
+        {isLiv && <p className="text-sm text-gray-600">You get to choose on the night. Just shout out your answers. Your teammates are voting beforehand!</p>}
       </section>
       <LiveFeud state={state} />
     </>}
     {state && !isLobby && <>
-      <p className="rounded-xl bg-rose-100 p-3 text-center text-sm text-rose-800">{isLiv ? "Your live picks decide the points." : "Your pre-votes are locked in. Watch Liv choose!"}</p>
-      {isLiv && <Link href="/quiz/liv" className="block rounded-xl bg-rose-600 p-3 text-center font-semibold text-white">Choose your answer 💖</Link>}
+      <p className="rounded-xl bg-rose-100 p-3 text-center text-sm text-rose-800">{isLiv ? "Shout out your pick. It decides the points!" : "Your pre-votes are locked in. Watch Liv choose!"}</p>
       <LiveFeud state={state} />
     </>}
     <Link href="/quiz/ben" className="block rounded-xl border-2 border-violet-300 bg-violet-50 p-4 text-center font-semibold text-violet-800 hover:bg-violet-100">Playing &ldquo;What Did Ben Say?&rdquo; 🤵 Tap here</Link>

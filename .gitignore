@@ -51,3 +51,6 @@ next-env.d.ts
 # local content
 /Hen's Quiz - Sheet1.csv
 /liv_photos/
+
+# InsForge CLI link (contains admin API key)
+.insforge/

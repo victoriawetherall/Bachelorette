@@ -33,7 +33,7 @@ try {
   GRANT ALL ON public.guests TO project_admin;
   ALTER DEFAULT PRIVILEGES FOR ROLE project_admin IN SCHEMA public GRANT ALL ON TABLES TO anon,authenticated;
   ALTER DEFAULT PRIVILEGES FOR ROLE project_admin GRANT EXECUTE ON FUNCTIONS TO anon,authenticated;`);
-  for (const file of ['20261008170000_quiz-teams.sql','20261008183000_family-feud.sql','20261009120000_ben-round.sql','20261009143000_live-quiz-rounds.sql','20261009143100_facebook-content.sql']) ok(`SET ROLE project_admin; ${fs.readFileSync(`migrations/${file}`, 'utf8')}`, database, true);
+  for (const file of ['20261008170000_quiz-teams.sql','20261008183000_family-feud.sql','20261009120000_ben-round.sql','20261009143000_live-quiz-rounds.sql','20261009143100_facebook-content.sql','20261009190000_family-trivia.sql']) ok(`SET ROLE project_admin; ${fs.readFileSync(`migrations/${file}`, 'utf8')}`, database, true);
   ok(`UPDATE public.feud_settings SET host_key_hash=encode(sha256(convert_to('${host}','UTF8')),'hex'),liv_key_hash=encode(sha256(convert_to('${liv}','UTF8')),'hex');`);
   assert.equal(state('fake').total_questions, 10);
   assert.equal(state('stories').total_questions, 0);
@@ -116,14 +116,29 @@ try {
   assert.equal(review.teams[1].answer,'Melbourne'); assert.equal(review.teams[1].correct,true);
   denied(`SELECT public.quiz_story_review('${liv}',${q.id});`, /Invalid host/);
 
+  assert.equal(state('family').total_questions,10);
+  action('family','start');
+  const family=state('family','Lisa');
+  assert.equal(family.options.length,4); assert.equal(family.options[1].text,"Crashed into Mum's freshly pruned roses");
+  assert.equal(family.correct_answer,null); assert.equal(family.story,null);
+  const familyHost=hostState('family');
+  assert.equal(familyHost.correct_answer,'B'); assert.match(familyHost.story,/rose bushes/);
+  denied(`SELECT public.quiz_live_submit('${member('Lisa')}','family',${family.current_question_id},'Z');`, /valid answer/);
+  submit('family','Lisa',family.current_question_id,'B'); submit('family','Bri',family.current_question_id,'A');
+  assert.equal(state('family').story,null);
+  action('family','lock',family.current_question_id); action('family','reveal',family.current_question_id);
+  assert.equal(state('family').story,familyHost.story);
+  assert.deepEqual(points('family'), {1:1,2:0,3:0,4:0});
+  assert.deepEqual(points('fake'), {1:2,2:0,3:2,4:0});
+
   guest(`SELECT public.ben_host_action('${host}','start',NULL);`);
   denied(`SELECT public.ben_save_prediction('${member('Sue')}',1,true);`, /Only your team captain/);
   guest(`SELECT public.ben_save_prediction('${member('Lisa')}',1,true); SELECT public.ben_host_action('${host}','lock',1); SELECT public.ben_host_action('${host}','reveal',1); SELECT public.ben_host_action('${host}','liv_right',1);`);
   guest(`SELECT public.feud_save_vote('${member('Lisa')}',1,'A'); SELECT public.feud_host_action('${host}','start',NULL); SELECT public.feud_choose('${liv}',1,'A'); SELECT public.feud_host_action('${host}','reveal',1);`);
   const total=overall().find((t) => t.team_number===1);
-  assert.deepEqual([total.feud,total.fake,total.stories,total.ben,total.total],[1,2,1,1,5]);
+  assert.deepEqual([total.feud,total.fake,total.stories,total.ben,total.family,total.total],[1,2,1,1,1,6]);
   guest(`SELECT public.ben_correct_result('${host}',1,false);`);
-  assert.equal(overall().find((t)=>t.team_number===1).total,4);
+  assert.equal(overall().find((t)=>t.team_number===1).total,5);
   console.log(`live-quiz.integration: all checks passed (${database})`);
   if (process.argv.includes('--keep')) console.log(`Kept rehearsal database: ${database}`);
 } finally {
