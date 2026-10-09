@@ -2,6 +2,7 @@
 
 import { FormEvent, useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { insforge, type Guest } from "@/lib/insforge";
 import {
   clearStoredGuest,
@@ -9,6 +10,11 @@ import {
   setStoredGuest,
   type GuestIdentity,
 } from "@/lib/identity";
+
+function guestDestination(): string {
+  const next = new URLSearchParams(window.location.search).get("next");
+  return next && ["/info", "/rsvp", "/photos", "/teams", "/quiz", "/quiz/pre-vote", "/quiz/liv"].includes(next) ? next : "/info";
+}
 
 export default function LandingPage() {
   const router = useRouter();
@@ -50,7 +56,7 @@ export default function LandingPage() {
   }, [loadGuests]);
 
   function handleContinue() {
-    router.push("/info");
+    router.push(guestDestination());
   }
 
   function handleNotYou() {
@@ -66,7 +72,7 @@ export default function LandingPage() {
     if (!guest) return;
 
     setStoredGuest({ id: guest.id, name: guest.name });
-    router.push("/info");
+    router.push(guestDestination());
   }
 
   return (
@@ -99,6 +105,12 @@ export default function LandingPage() {
           >
             Not you?
           </button>
+          <Link
+            href="/quiz"
+            className="block rounded-xl border border-rose-200 px-4 py-2.5 text-sm font-semibold text-rose-700 transition hover:bg-rose-50"
+          >
+            Meet your team & join the quiz 🪩
+          </Link>
         </section>
       ) : (
         <form

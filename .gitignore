@@ -33,6 +33,9 @@ yarn-error.log*
 .env*.local
 .env.local
 
+# private quiz access codes
+/.quiz/
+
 # vercel
 .vercel
 
