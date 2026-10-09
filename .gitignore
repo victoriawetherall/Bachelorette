@@ -47,3 +47,7 @@ next-env.d.ts
 ~$*.docx
 .env*
 !.env.example
+
+# local content
+/Hen's Quiz - Sheet1.csv
+/liv_photos/
