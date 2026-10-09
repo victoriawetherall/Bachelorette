@@ -4,6 +4,7 @@ import Link from "next/link";
 import { useEffect, useState } from "react";
 import QuizAccess from "@/components/QuizAccess";
 import QuizConnection from "@/components/QuizConnection";
+import QuizRoundNav from "@/components/QuizRoundNav";
 import FeudQuestionCard from "@/components/FeudQuestionCard";
 import FeudScoreboard from "@/components/FeudScoreboard";
 import { FEUD_QUESTIONS, chooseFeudAnswer, correctFeudAnswer, hostFeudAction, type AnswerKey } from "@/lib/feud";
@@ -30,6 +31,7 @@ function HostDashboard({ accessKey, lock }: { accessKey: string; lock: () => voi
   const button = "rounded-xl bg-rose-600 px-4 py-3 font-semibold text-white hover:bg-rose-700 disabled:opacity-40";
   return <main className="mx-auto max-w-4xl space-y-6 px-4 py-8">
     <header className="flex flex-wrap items-center justify-between gap-4"><div><p className="text-sm font-semibold uppercase tracking-wide text-rose-500">Host controls · private</p><h1 className="text-3xl font-bold text-rose-800">Family Feud</h1></div><div className="flex flex-wrap gap-4 text-sm font-semibold text-rose-600"><Link href="/display" target="_blank" rel="noopener noreferrer" className="underline">Open Zoom display ↗</Link><Link href="/control/ben" className="underline">What Did Ben Say?</Link><Link href="/admin/teams" className="underline">Teams</Link><button type="button" onClick={lock} className="underline">Lock controls</button></div></header>
+    <QuizRoundNav host />
     <QuizConnection error={connectionError} loading={!state} refresh={refresh} />
     {error && <p role="alert" className="rounded-xl bg-red-50 p-4 text-sm text-red-800">{error}</p>}
     {state?.phase === "lobby" && <section className="space-y-5 rounded-2xl border border-rose-200 bg-white p-5">

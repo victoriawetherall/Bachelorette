@@ -1,0 +1,131 @@
+// Disposable PostgreSQL only. Usage: node tests/live-quiz.integration.cjs /socket [port] [--keep]
+const assert = require('node:assert/strict');
+const fs = require('node:fs');
+const { spawnSync } = require('node:child_process');
+const socket = process.argv[2];
+const port = process.argv[3] || '55469';
+if (!socket?.startsWith('/')) throw new Error('Pass a disposable PostgreSQL socket directory.');
+const database = `quiz_live_test_${Date.now()}`;
+const host = 'test-host-access-code-only';
+const liv = 'test-liv-access-code-only';
+const query = (sql, db = database, transaction = false) => spawnSync('psql', ['-h', socket, '-p', port, '-d', db, '-X', '-q', '-A', '-t', '-v', 'ON_ERROR_STOP=1', ...(transaction ? ['--single-transaction'] : [])], { input: sql, encoding: 'utf8' });
+function ok(sql, db, transaction) { const result = query(sql, db, transaction); assert.equal(result.status, 0, result.stderr); return result.stdout.trim(); }
+function denied(sql, pattern) { const result = query(`SET ROLE anon; ${sql}`); assert.notEqual(result.status, 0, 'Expected denial'); assert.match(result.stderr, pattern); }
+const guest = (sql) => ok(`SET ROLE anon; ${sql}`);
+const member = (name) => ok(`SELECT guest_id FROM public.quiz_team_members WHERE display_name='${name}';`);
+const team = (n) => ok(`SELECT id FROM public.quiz_teams WHERE team_number=${n};`);
+const state = (round, name) => JSON.parse(guest(`SELECT public.quiz_live_state('${round}',${name ? `'${member(name)}'` : 'NULL'});`));
+const hostState = (round) => JSON.parse(guest(`SELECT public.quiz_live_host_state('${host}','${round}');`));
+const action = (round, name, id = 'NULL') => guest(`SELECT public.quiz_live_action('${host}','${round}','${name}',${id});`);
+const submit = (round, name, id, answer) => guest(`SELECT public.quiz_live_submit('${member(name)}','${round}',${id},'${answer}');`);
+const overall = () => JSON.parse(guest('SELECT public.quiz_overall_scores();'));
+const points = (round) => Object.fromEntries(state(round).teams.map((t) => [t.team_number, t.points]));
+ok(`CREATE DATABASE ${database};`, 'postgres');
+try {
+  ok(`DO $$ BEGIN
+    IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='anon') THEN CREATE ROLE anon; END IF;
+    IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='authenticated') THEN CREATE ROLE authenticated; END IF;
+    IF NOT EXISTS(SELECT 1 FROM pg_roles WHERE rolname='project_admin') THEN CREATE ROLE project_admin; END IF;
+  END $$;
+  GRANT USAGE,CREATE ON SCHEMA public TO project_admin;
+  CREATE TABLE public.guests(id uuid PRIMARY KEY DEFAULT gen_random_uuid(),name text NOT NULL,created_at timestamptz DEFAULT now());
+  INSERT INTO public.guests(name) VALUES ${['Batsho','Bec','Bella','Bri','Claudia','Deb','GP','G-Shez','Lisa','Lucy','Matil','Nancy','Nicole','Sue','The Bride','Vic'].map((n) => `('${n}')`).join(',')};
+  GRANT ALL ON public.guests TO project_admin;
+  ALTER DEFAULT PRIVILEGES FOR ROLE project_admin IN SCHEMA public GRANT ALL ON TABLES TO anon,authenticated;
+  ALTER DEFAULT PRIVILEGES FOR ROLE project_admin GRANT EXECUTE ON FUNCTIONS TO anon,authenticated;`);
+  for (const file of ['20261008170000_quiz-teams.sql','20261008183000_family-feud.sql','20261009120000_ben-round.sql','20261009143000_live-quiz-rounds.sql','20261009143100_facebook-content.sql']) ok(`SET ROLE project_admin; ${fs.readFileSync(`migrations/${file}`, 'utf8')}`, database, true);
+  ok(`UPDATE public.feud_settings SET host_key_hash=encode(sha256(convert_to('${host}','UTF8')),'hex'),liv_key_hash=encode(sha256(convert_to('${liv}','UTF8')),'hex');`);
+  assert.equal(state('fake').total_questions, 10);
+  assert.equal(state('stories').total_questions, 0);
+  assert.equal(overall().every((t) => t.total === 0), true);
+  for (const table of ['quiz_team_captains','quiz_live_rounds','quiz_live_questions','quiz_live_submissions','quiz_live_results']) denied(`SELECT * FROM public.${table};`, /permission denied/);
+  denied(`SELECT public.quiz_live_host_state('${liv}','fake');`, /Invalid host/);
+  denied(`SELECT public.quiz_set_captain('${liv}','${team(1)}','${member('Sue')}');`, /Invalid host/);
+  denied(`SELECT public.quiz_claim_captain('${member('Liv')}');`, /other than Liv/);
+  guest(`SELECT public.quiz_claim_captain('${member('Sue')}');`);
+  guest(`SELECT public.quiz_claim_captain('${member('Sue')}');`); // retry is safe
+  denied(`SELECT public.quiz_claim_captain('${member('Lisa')}');`, /already has a captain/);
+  denied(`SELECT public.quiz_set_captain('${host}','${team(1)}','${member('Bri')}');`, /member of this team/);
+  for (const name of ['Bri','Deb','Vic']) guest(`SELECT public.quiz_claim_captain('${member(name)}');`);
+  guest(`SELECT public.quiz_set_captain('${host}','${team(1)}','${member('Lisa')}');`);
+  denied(`SELECT public.quiz_live_submit('${member('Sue')}','fake',1,'A');`, /locked/);
+  guest(`SELECT public.quiz_live_configure('${host}','fake',2);`);
+  guest(`SELECT public.quiz_live_edit_question('${host}','fake',1,'ignored','ignored',false);`);
+  assert.equal(state('fake').total_questions, 9);
+  guest(`SELECT public.quiz_live_edit_question('${host}','fake',1,'ignored','ignored',true);`);
+  action('fake', 'start');
+  let s = state('fake', 'Lisa');
+  assert.equal(s.correct_answer, null);
+  assert.equal(s.options.length, 4);
+  assert.equal(s.current_question_id, 1);
+  for (const option of s.options) {
+    assert.match(option.image, /^\/images\/quiz\/[a-f0-9]{24}\.(asset|png)$/);
+    assert.equal(fs.existsSync(`public${option.image}`), true);
+    assert.doesNotMatch(JSON.stringify(option), /fake_|round-/);
+  }
+  const answer = hostState('fake').correct_answer;
+  const wrong = 'ABCD'.split('').find((k) => k !== answer);
+  denied(`SELECT public.quiz_live_submit('${member('Sue')}','fake',1,'A');`, /Only your team captain/);
+  denied(`SELECT public.quiz_live_submit('${member('Lisa')}','fake',2,'A');`, /locked/);
+  denied(`SELECT public.quiz_live_submit('${member('Lisa')}','fake',1,'Z');`, /valid answer/);
+  submit('fake','Lisa',1,wrong); submit('fake','Lisa',1,answer);
+  submit('fake','Bri',1,wrong); submit('fake','Deb',1,answer);
+  assert.equal(state('fake','Sue').teams.find((t) => t.team_number === 1).answer, answer);
+  assert.equal(state('fake','Bri').teams.find((t) => t.team_number === 1).answer, null);
+  assert.equal(state('fake').teams.every((t) => t.answer === null), true);
+  assert.deepEqual(points('fake'), {1:0,2:0,3:0,4:0});
+  denied(`SELECT public.quiz_live_action('${host}','fake','reveal',1);`, /not available/);
+  action('fake','lock',1);
+  assert.equal(state('fake').correct_answer, null);
+  denied(`SELECT public.quiz_live_submit('${member('Lisa')}','fake',1,'A');`, /locked/);
+  action('fake','reopen',1); submit('fake','Bri',1,wrong); action('fake','lock',1); action('fake','reveal',1);
+  assert.equal(state('fake').correct_answer, answer);
+  assert.deepEqual(points('fake'), {1:2,2:0,3:2,4:0});
+  denied(`SELECT public.quiz_live_action('${host}','fake','reveal',1);`, /not available/);
+  assert.deepEqual(points('fake'), {1:2,2:0,3:2,4:0});
+  denied(`SELECT public.quiz_live_configure('${host}','fake',5);`, /fixed/);
+  denied(`SELECT public.quiz_live_edit_question('${host}','fake',1,'new','A',false);`, /fixed/);
+  action('fake','leaderboard',1); action('fake','next',1);
+  denied(`SELECT public.quiz_live_action('${host}','fake','lock',1);`, /moved on/);
+  assert.equal(state('fake').correct_answer, null);
+  for (let id=2;id<=10;id++) action('fake','skip',id);
+  assert.equal(state('fake').phase,'finished');
+  assert.equal(state('fake').revealed_count,1);
+
+  denied(`SELECT public.quiz_live_action('${host}','stories','start',NULL);`, /at least one/);
+  guest(`SELECT public.quiz_live_edit_question('${host}','stories',NULL,'Where did they get engaged?','Inverloch',true);`);
+  guest(`SELECT public.quiz_live_edit_question('${host}','stories',NULL,'A second story','A second answer',false);`);
+  const q = hostState('stories').questions[0];
+  assert.equal(state('stories').prompt,null);
+  action('stories','start');
+  assert.equal(state('stories').correct_answer,null);
+  submit('stories','Lisa',q.id,'Inverloch'); submit('stories','Bri',q.id,'Melbourne');
+  denied(`SELECT public.quiz_live_judge('${host}',${q.id},'${team(1)}',true);`, /Reveal/);
+  action('stories','lock',q.id); action('stories','reveal',q.id);
+  assert.equal(state('stories').correct_answer,'Inverloch');
+  denied(`SELECT public.quiz_live_action('${host}','stories','next',${q.id});`, /Judge all/);
+  denied(`SELECT public.quiz_live_judge('${host}',${q.id},'${team(3)}',true);`, /missing answer/);
+  guest(`SELECT public.quiz_live_judge('${host}',${q.id},'${team(1)}',true); SELECT public.quiz_live_judge('${host}',${q.id},'${team(2)}',false);`);
+  assert.deepEqual(points('stories'), {1:1,2:0,3:0,4:0});
+  action('stories','next',q.id);
+  assert.equal(state('stories').phase,'finished');
+  guest(`SELECT public.quiz_live_judge('${host}',${q.id},'${team(2)}',true);`);
+  guest(`SELECT public.quiz_live_judge('${host}',${q.id},'${team(2)}',true);`);
+  assert.deepEqual(points('stories'), {1:1,2:1,3:0,4:0});
+  const review=JSON.parse(guest(`SELECT public.quiz_story_review('${host}',${q.id});`));
+  assert.equal(review.teams[1].answer,'Melbourne'); assert.equal(review.teams[1].correct,true);
+  denied(`SELECT public.quiz_story_review('${liv}',${q.id});`, /Invalid host/);
+
+  guest(`SELECT public.ben_host_action('${host}','start',NULL);`);
+  denied(`SELECT public.ben_save_prediction('${member('Sue')}',1,true);`, /Only your team captain/);
+  guest(`SELECT public.ben_save_prediction('${member('Lisa')}',1,true); SELECT public.ben_host_action('${host}','lock',1); SELECT public.ben_host_action('${host}','reveal',1); SELECT public.ben_host_action('${host}','liv_right',1);`);
+  guest(`SELECT public.feud_save_vote('${member('Lisa')}',1,'A'); SELECT public.feud_host_action('${host}','start',NULL); SELECT public.feud_choose('${liv}',1,'A'); SELECT public.feud_host_action('${host}','reveal',1);`);
+  const total=overall().find((t) => t.team_number===1);
+  assert.deepEqual([total.feud,total.fake,total.stories,total.ben,total.total],[1,2,1,1,5]);
+  guest(`SELECT public.ben_correct_result('${host}',1,false);`);
+  assert.equal(overall().find((t)=>t.team_number===1).total,4);
+  console.log(`live-quiz.integration: all checks passed (${database})`);
+  if (process.argv.includes('--keep')) console.log(`Kept rehearsal database: ${database}`);
+} finally {
+  if (!process.argv.includes('--keep')) ok(`DROP DATABASE ${database} WITH (FORCE);`, 'postgres');
+}

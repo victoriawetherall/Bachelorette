@@ -5,6 +5,7 @@ import { useEffect, useState } from "react";
 import TeamRoster from "@/components/TeamRoster";
 import LiveFeud from "@/components/LiveFeud";
 import QuizConnection from "@/components/QuizConnection";
+import QuizRoundNav from "@/components/QuizRoundNav";
 import { readBallot } from "@/lib/feud";
 import { useFeudState } from "@/lib/useFeudState";
 import { useGuest } from "@/lib/useGuest";
@@ -31,6 +32,7 @@ export default function QuizPage() {
       <h1 className="text-3xl font-bold text-rose-800">{isLobby || !state ? "Meet your quiz crew 🪩" : "Family Feud"}</h1>
       {team && <p className="text-sm font-semibold text-rose-700">You&rsquo;re on {team.name}, {guest?.name}!</p>}
     </header>
+    <QuizRoundNav />
     <QuizConnection error={error} loading={!state} refresh={refresh} />
     {teamError && <QuizConnection error={teamError} loading={false} refresh={retryTeams} />}
     {isLobby && <>

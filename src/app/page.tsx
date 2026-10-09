@@ -13,7 +13,7 @@ import {
 
 function guestDestination(): string {
   const next = new URLSearchParams(window.location.search).get("next");
-  return next && ["/info", "/rsvp", "/photos", "/teams", "/quiz", "/quiz/pre-vote", "/quiz/liv"].includes(next) ? next : "/info";
+  return next && ["/info", "/rsvp", "/photos", "/teams", "/quiz", "/quiz/pre-vote", "/quiz/liv", "/quiz/fake", "/quiz/stories", "/quiz/ben", "/quiz/scoreboard"].includes(next) ? next : "/info";
 }
 
 export default function LandingPage() {
