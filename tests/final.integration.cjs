@@ -43,7 +43,7 @@ try {
   GRANT ALL ON public.guests TO project_admin;
   GRANT SELECT ON public.guests TO anon,authenticated;
   ALTER DEFAULT PRIVILEGES FOR ROLE project_admin IN SCHEMA public GRANT ALL ON TABLES TO anon,authenticated;`);
-  for (const file of ['20261008170000_quiz-teams.sql','20261008183000_family-feud.sql','20261009120000_ben-round.sql','20261009143000_live-quiz-rounds.sql','20261009143100_facebook-content.sql','20261009190000_family-trivia.sql','20261009200000_marriage-advice.sql','20261009210000_guest-flow.sql','20261009220000_final-round.sql'])
+  for (const file of ['20261008170000_quiz-teams.sql','20261008183000_family-feud.sql','20261009120000_ben-round.sql','20261009143000_live-quiz-rounds.sql','20261009143100_facebook-content.sql','20261009190000_family-trivia.sql','20261009200000_marriage-advice.sql','20261009210000_guest-flow.sql','20261009220000_final-round.sql','20261009230000_blind-ranking.sql'])
     ok(`SET ROLE project_admin; ${fs.readFileSync(`migrations/${file}`, 'utf8')}`, database, true);
   ok(`UPDATE public.feud_settings SET host_key_hash=encode(sha256(convert_to('${hostKey}','UTF8')),'hex');`);
 
@@ -53,52 +53,72 @@ try {
   deniedAct('start', null, null, /No one has written any advice/);
   denied(asGuest(`SELECT public.quiz_final_host_state('wrong-code-wrong-code');`), /Invalid host access code/);
   denied(asGuest(`SELECT public.quiz_final_action('wrong-code-wrong-code','start',NULL,NULL);`), /Invalid host access code/);
-  const writers = { Bri: 'Never go to bed angry.', Deb: 'Always say yes, dear.', Sue: 'Separate bathrooms.', Vic: 'Laugh at his jokes.' };
+  const writers = { Bri: 'Never go to bed angry.', Deb: 'Always say yes, dear.', Sue: 'Separate bathrooms.', Vic: 'Laugh at his jokes.',
+    Bec: 'Date nights forever.', Lisa: 'Pick your battles.', Nancy: 'Two duvets.' };
   for (const [name, body] of Object.entries(writers)) save(name, body);
   assert.deepEqual(state().entries, [], 'Card text stays private in the lobby');
-  assert.equal(state().entry_count, 4);
-  assert.ok(!hostState().missing.includes('Bri') && hostState().missing.includes('Bec') && !hostState().missing.includes('Liv'));
+  assert.equal(state().entry_count, 7);
+  assert.ok(!hostState().missing.includes('Bri') && hostState().missing.includes('Bella') && !hostState().missing.includes('Liv'));
 
-  // Start: advice locks and gets shuffled numbers 1..4.
+  // Start: advice locks; only the first card is out.
   act('start');
-  denied(asGuest(`SELECT public.quiz_advice_save('${member('Bec')}','Too late');`), /advice is locked in/);
+  denied(asGuest(`SELECT public.quiz_advice_save('${member('Bella')}','Too late');`), /advice is locked in/);
   denied(asGuest(`SELECT public.quiz_advice_save('${member('Bri')}','');`), /advice is locked in/);
   let s = state();
-  assert.equal(s.phase, 'reading'); assert.equal(s.places, 3);
-  assert.deepEqual(s.entries.map((e) => e.no), [1,2,3,4]);
-  assert.deepEqual(s.entries.map((e) => e.body).sort(), Object.values(writers).sort());
+  assert.equal(s.phase, 'ranking'); assert.equal(s.places, 5); assert.equal(s.current, 1); assert.equal(s.max_swaps, 3);
+  assert.deepEqual(s.entries.map((e) => [e.no, e.rank]), [[1, null]], 'Future cards stay hidden');
+  assert.equal(hostState().entries.length, 1, 'Host cannot peek ahead either');
   assert.ok(!JSON.stringify(s).includes('"author"'), 'No authors before reveal');
-  const noOf = (name) => s.entries.find((e) => e.body === writers[name]).no;
 
-  // Awards: a card holds one place; moving it frees the old place.
-  deniedAct('award', 4, noOf('Bri'), /1st, 2nd or 3rd/);
-  deniedAct('award', 1, 99, /advice cards/);
-  act('award', 1, noOf('Deb'));
-  act('award', 2, noOf('Deb'));
-  assert.deepEqual(state().awards.map((a) => a.place), [2], 'Moving a card frees its old place');
-  act('award', 1, noOf('Bri')); act('award', 3, noOf('Sue'));
-  act('clear', 3); deniedAct('reveal', 3, null, /Pick all 3 places/);
-  act('award', 3, noOf('Sue'));
-  assert.ok(state().awards.every((a) => !a.revealed && !a.author));
+  // Blind placing, one card at a time. Liv's spots: card n goes to spot order[n-1].
+  const order = [6, 1, 3, 7, 2, 5, 4];
+  deniedAct('place', 8, null, /from #1 to #7/);
+  deniedAct('swap', 1, 2, /not available/);
+  deniedAct('lock', null, null, /not available/);
+  act('place', order[0]);
+  deniedAct('place', order[0], null, /already taken/);
+  act('place', 2); act('undo'); // mis-tap on card 2, taken back
+  s = state();
+  assert.equal(s.current, 2); assert.deepEqual(s.entries.map((e) => e.rank), [order[0], null]);
+  for (const spot of order.slice(1)) act('place', spot);
+  s = state();
+  assert.equal(s.current, null); assert.equal(s.entries.length, 7); assert.equal(s.last_placed, 7);
+  deniedAct('place', 1, null, /not available/);
+  const authorAt = (rank) => Object.entries(writers).find(([, body]) => body === state().entries.find((e) => e.rank === rank).body)[0];
+
+  // Three swaps; undo refunds one.
+  const before = [1, 2, 3, 4, 5].map(authorAt);
+  deniedAct('swap', 1, 1, /two different spots/);
+  deniedAct('swap', 1, 9, /two different spots/);
+  act('swap', 1, 7); act('undo');
+  assert.equal(state().swaps_used, 0); assert.equal(authorAt(1), before[0]);
+  act('swap', 1, 2); act('swap', 5, 6); act('swap', 3, 4);
+  s = state();
+  assert.equal(s.swaps_used, 3); assert.deepEqual(s.last_swap, [3, 4]);
+  deniedAct('swap', 1, 2, /used all 3 swaps/);
+  assert.equal(authorAt(1), before[1]); assert.equal(authorAt(2), before[0]);
+  assert.equal(authorAt(3), before[3]); assert.equal(authorAt(4), before[2]);
+  const top = [1, 2, 3, 4, 5].map(authorAt);
   assert.deepEqual(Object.values(scores()).filter(Boolean), [], 'Nothing scores before reveal');
 
-  // Reveal in order 3rd, 2nd, 1st. Repeats are harmless; skipping ahead is refused.
-  deniedAct('reveal', 1, null, /in order/);
+  // Lock, then reveal 5th up to 1st. Repeats are harmless; skipping ahead is refused.
+  deniedAct('reveal', 5, null, /not available/);
+  act('lock');
+  deniedAct('undo', null, null, /not available/);
+  deniedAct('reveal', 4, null, /in order/);
   deniedAct('finish', null, null, /not available/);
-  act('reveal', 3); act('reveal', 3);
+  act('reveal', 5); act('reveal', 5);
   s = state();
   assert.equal(s.revealed_places, 1);
-  assert.deepEqual(s.awards.filter((a) => a.revealed).map((a) => [a.place, a.author, a.points]), [[3, 'Sue', 1]]);
-  assert.ok(!s.awards.find((a) => a.place === 1).author, '1st stays hidden');
-  deniedAct('award', 1, noOf('Vic'), /not available/);
-  assert.equal(scores()[teamName('Sue')], 1);
-  act('reveal', 2); act('reveal', 1); act('reveal', 1);
+  assert.deepEqual(s.entries.filter((e) => e.author).map((e) => [e.rank, e.author, e.points]), [[5, top[4], 1]]);
+  assert.equal(scores()[teamName(top[4])], 1);
+  for (const rank of [4, 3, 2, 1]) act('reveal', rank);
   s = state();
-  assert.equal(s.revealed_places, 3);
-  assert.deepEqual(s.awards.map((a) => [a.place, a.author, a.team, a.points]),
-    [[1,'Bri',teamName('Bri'),5],[2,'Deb',teamName('Deb'),3],[3,'Sue',teamName('Sue'),1]]);
+  assert.deepEqual(s.entries.filter((e) => e.author).sort((a, b) => a.rank - b.rank).map((e) => [e.rank, e.author, e.team, e.points]),
+    top.map((name, i) => [i + 1, name, teamName(name), 5 - i]));
+  assert.ok(s.entries.filter((e) => e.rank > 5).every((e) => !e.author), 'Spots below the top 5 stay anonymous');
   const expected = {};
-  for (const [name, points] of [['Bri',5],['Deb',3],['Sue',1]]) expected[teamName(name)] = (expected[teamName(name)] || 0) + points;
+  top.forEach((name, i) => { expected[teamName(name)] = (expected[teamName(name)] || 0) + 5 - i; });
   for (const [team, points] of Object.entries(scores())) assert.equal(points, expected[team] || 0, `${team} final points`);
   const totals = JSON.parse(ok(asGuest('SELECT public.quiz_overall_scores();')));
   assert.ok(totals.every((team) => team.total === team.feud + team.fake + team.stories + team.ben + team.family + team.final));
@@ -107,7 +127,7 @@ try {
   assert.equal(JSON.parse(ok(asGuest('SELECT public.quiz_progress();'))).final, 'finished');
 
   // Private tables stay private.
-  denied(asGuest('SELECT * FROM public.quiz_final_awards;'), /permission denied/);
+  denied(asGuest('SELECT * FROM public.quiz_final_swaps;'), /permission denied/);
   denied(asGuest('SELECT public.quiz_final_points(1);'), /permission denied/);
   console.log('Final Round integration checks passed.');
 } finally {

@@ -1,7 +1,9 @@
 # Plan A: Final Round (blind marriage advice)
 
 **Status:** built. A1 is live (`20261009200000_marriage-advice.sql`); A2 is
-`20261009220000_final-round.sql`, tested in `tests/final.integration.cjs`.
+`20261009220000_final-round.sql`, replaced by the blind ranking in
+`20261009230000_blind-ranking.sql` (see "A2, take two" below). Tested in
+`tests/final.integration.cjs`.
 
 ## The idea
 
@@ -97,6 +99,27 @@ matter more, change only that function (e.g. 20 / 10 / 5).
 3. Liv calls her 3rd, 2nd and 1st favourites. Harry taps each one in.
 4. Harry reveals 3rd, then 2nd, then 1st. Each shows the author, team and points.
 5. Finish. The overall leaderboard now includes the final.
+
+## A2, take two: blind ranking (`20261009230000_blind-ranking.sql`)
+
+This replaces the 3rd/2nd/1st pick above.
+
+1. **Start**: advice locks and gets a shuffled order. Only the first card comes out.
+2. **Blind placing**: Harry reads the card out. Liv calls a spot from #1
+   (favourite) to #N, and Harry taps that free spot. The next card comes out
+   straight away. Cards still to come are hidden everywhere, including from the host.
+3. **Swaps**: once every card is placed, Liv gets **3 swaps**. Harry taps two spots to swap them.
+4. **Lock**: Harry locks the ranking (with a confirm prompt).
+5. **Reveal**: the authors of the top five are revealed from #5 up to #1. They score
+   **5 / 4 / 3 / 2 / 1** for the writer's team. Spots below #5 stay anonymous.
+
+**Undo** takes back the last swap or, if there are no swaps, the last card placed.
+
+Data: `quiz_advice.rank` (deferrable unique) replaces `quiz_final_awards`.
+`quiz_final_swaps` logs swaps so they can be undone. Points live in
+`quiz_final_points`, and the swap allowance in `quiz_final_max_swaps`.
+Phases: `lobby → ranking → reveal → finished`. `quiz_final_action(key, action, rank, other)`
+takes `start`, `place`, `swap`, `undo`, `lock`, `reveal` and `finish`.
 
 ## Tests
 

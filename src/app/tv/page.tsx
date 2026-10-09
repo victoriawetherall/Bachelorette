@@ -25,7 +25,7 @@ const ROUND_INFO: Record<FlowRound["slug"], { emoji: string; rules: string }> = 
   family: { emoji: "📜", rules: "Tales from the family vault. Four answers each, only one really happened. Captains lock in your team’s pick." },
   fake: { emoji: "🕵️", rules: "Three real Facebook posts. One fake. Captains, can your team spot it?" },
   ben: { emoji: "🤵", rules: "We asked Ben. Liv answers live. Your team calls it: will she match Ben’s answer?" },
-  final: { emoji: "💍", rules: "Liv picks her favourite marriage advice, blind. The writers’ teams score 5, 3 and 1." },
+  final: { emoji: "💍", rules: "Liv ranks your marriage advice blind, one card at a time, then gets three swaps. Her top five score 5, 4, 3, 2 and 1 for the writer’s team." },
 };
 
 function useSiteAddress() {

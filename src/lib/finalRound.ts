@@ -1,18 +1,21 @@
 import { rpc } from "./feud";
 
-export type FinalAward = { place: number; no: number; revealed: boolean; author?: string; team?: string; points?: number };
+// rank is Liv's spot for the card (#1 = favourite). Authors only exist once revealed.
+export type FinalEntry = { no: number; body: string; rank: number | null; author?: string; team?: string; points?: number };
 export type FinalState = {
-  phase: "lobby" | "reading" | "finished";
+  phase: "lobby" | "ranking" | "reveal" | "finished";
   revealed_places: number; places: number; entry_count: number; updated_at: string;
-  entries: { no: number; body: string }[];
-  awards: FinalAward[];
+  current: number | null; last_placed: number | null;
+  swaps_used: number; max_swaps: number; last_swap: [number, number] | null;
+  entries: FinalEntry[];
   missing?: string[];
 };
 
-export const MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉" };
-export const ORDINALS: Record<number, string> = { 1: "1st", 2: "2nd", 3: "3rd" };
+export const MEDALS: Record<number, string> = { 1: "🥇", 2: "🥈", 3: "🥉", 4: "🏅", 5: "🏅" };
+export const ordinal = (n: number) => `${n}${n % 10 === 1 && n !== 11 ? "st" : n % 10 === 2 && n !== 12 ? "nd" : n % 10 === 3 && n !== 13 ? "rd" : "th"}`;
+export const pointsFor = (rank: number) => (rank >= 1 && rank <= 5 ? 6 - rank : 0);
 
 export const readFinalState = () => rpc<FinalState>("quiz_final_state");
 export const readFinalHostState = (key: string) => rpc<FinalState>("quiz_final_host_state", { p_key: key });
-export const finalAction = (key: string, action: string, place: number | null = null, no: number | null = null) =>
-  rpc("quiz_final_action", { p_key: key, p_action: action, p_place: place, p_no: no });
+export const finalAction = (key: string, action: string, rank: number | null = null, other: number | null = null) =>
+  rpc("quiz_final_action", { p_key: key, p_action: action, p_rank: rank, p_other: other });

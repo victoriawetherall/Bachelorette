@@ -58,7 +58,7 @@ function FinalRound() {
   return <section className="space-y-5">
     <header className="text-center"><p className="text-sm font-semibold text-rose-500">Round 5 · Liv’s hens quiz</p><h2 className="text-3xl font-bold text-rose-800">Final Round 💍</h2></header>
     <QuizConnection error={error} loading={!state} refresh={refresh} />
-    <p className="rounded-xl bg-rose-100 p-3 text-center text-sm text-rose-800">Liv is picking her favourite advice blind. Points go to the writer&rsquo;s team!</p>
+    <p className="rounded-xl bg-rose-100 p-3 text-center text-sm text-rose-800">Liv is ranking the advice blind, one card at a time. Her top five score for the writer&rsquo;s team!</p>
     {state && <FinalRoundView state={state} />}
   </section>;
 }
