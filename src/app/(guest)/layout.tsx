@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { getStoredGuest } from "@/lib/identity";
 import BottomNav from "@/components/BottomNav";
 
@@ -11,15 +11,16 @@ export default function GuestLayout({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+  const pathname = usePathname();
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     if (!getStoredGuest()) {
-      router.replace("/");
+      router.replace(`/?next=${encodeURIComponent(pathname)}`);
       return;
     }
     setReady(true);
-  }, [router]);
+  }, [router, pathname]);
 
   if (!ready) {
     return (

@@ -1,0 +1,13 @@
+.env
+.env.*
+**/~$*.docx
+.quiz
+.git
+.cursor
+.claude
+.mcp.json
+docs
+tests
+migrations
+SQL
+scripts

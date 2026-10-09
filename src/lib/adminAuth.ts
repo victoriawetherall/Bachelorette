@@ -1,10 +1,19 @@
-const STORAGE_KEY = "bacparty:admin";
-
-export function isAdminUnlocked(): boolean {
-  if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(STORAGE_KEY) === "true";
+export async function isAdminUnlocked(): Promise<boolean> {
+  try {
+    return (await fetch("/api/admin/auth", { cache: "no-store" })).ok;
+  } catch {
+    return false;
+  }
 }
 
-export function unlockAdmin() {
-  window.localStorage.setItem(STORAGE_KEY, "true");
+export async function unlockAdmin(password: string) {
+  const response = await fetch("/api/admin/auth", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ password }),
+  });
+  if (!response.ok) {
+    const data = await response.json();
+    throw new Error(data.error ?? "Couldn't unlock the organiser view.");
+  }
 }
