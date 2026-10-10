@@ -19,7 +19,7 @@ export default function LiveFeud({ state, large = false }: { state: FeudState; l
   return (
     <div className={large ? "space-y-4" : "space-y-6"}>
       <p className="text-sm font-semibold uppercase tracking-wide text-rose-600">Question {question.id} of {state.total_questions}</p>
-      <FeudQuestionCard question={question} large={large} correct={state.chosen_option} distribution={state.distribution} />
+      <FeudQuestionCard key={question.id} question={question} large={large} stagger={large && state.phase === "question"} celebrate={state.phase === "reveal"} correct={state.chosen_option} distribution={state.distribution} />
       <p role="status" className="rounded-2xl bg-rose-100 p-3 text-center font-semibold text-rose-800">
         {state.phase === "question" ? "Liv is choosing her answer…" : state.phase === "locked" ? "Liv’s choice is locked in. Ready for the reveal?" : "Who picked the same answer as Liv?"}
       </p>

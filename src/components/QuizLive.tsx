@@ -32,12 +32,14 @@ export default function QuizLive({ state, large = false, selected, onSelect, dis
       <p className="text-sm font-semibold uppercase tracking-wide text-rose-500">Question {state.question_number} of {state.total_questions}</p>
       <h2 className={`${large ? "text-3xl md:text-4xl" : "text-xl"} font-bold text-rose-900`}>{state.prompt}</h2>
       {state.slug === "fake" && <FacebookPosts key={state.current_question_id} state={state} large={large} selected={selected} onSelect={onSelect} disabled={disabled} />}
-      {state.slug === "family" && <div className={`grid gap-3 ${large ? "md:grid-cols-2" : ""}`}>
-        {state.options.map((option) => {
+      {state.slug === "family" && <div key={state.current_question_id} className={`grid gap-3 ${large ? "md:grid-cols-2" : ""}`}>
+        {state.options.map((option, index) => {
           const correct = revealed && state.correct_answer === option.key;
-          return <button key={option.key} type="button" disabled={disabled || !onSelect} aria-pressed={selected === option.key} onClick={() => onSelect?.(option.key)} className={`flex gap-3 rounded-xl border-2 p-4 text-left disabled:cursor-default ${large ? "text-2xl" : "text-lg"} ${correct ? "border-emerald-500 bg-emerald-50" : selected === option.key ? "border-rose-600 bg-rose-50" : "border-rose-100 bg-white"}`}>
+          // On the TV the options pop in one by one, two seconds apart.
+          const stagger = large && state.phase === "question";
+          return <button key={option.key} type="button" disabled={disabled || !onSelect} aria-pressed={selected === option.key} onClick={() => onSelect?.(option.key)} style={stagger ? { animationDelay: `${(index + 1) * 2}s` } : undefined} className={`${stagger ? "option-pop" : ""} ${revealed && state.correct_answer ? (correct ? "answer-winner" : "answer-loser") : ""} flex gap-3 rounded-xl border-2 p-4 text-left disabled:cursor-default ${large ? "text-2xl" : "text-lg"} ${correct ? "border-emerald-500 bg-emerald-50" : selected === option.key ? "border-rose-600 bg-rose-50" : "border-rose-100 bg-white"}`}>
             <span className="font-bold text-rose-700">{option.key}</span>
-            <span className="flex-1 font-semibold text-gray-800">{option.text}{correct && <span className="block text-base text-emerald-800">The real story! ✅</span>}{selected === option.key && !revealed && <span className="block text-base text-rose-700">Your team’s pick</span>}</span>
+            <span className="flex-1 font-semibold text-gray-800">{option.text}{correct && <span className="block text-base text-emerald-800">The real story! ✅🎉</span>}{selected === option.key && !revealed && <span className="block text-base text-rose-700">Your team’s pick</span>}</span>
           </button>;
         })}
       </div>}

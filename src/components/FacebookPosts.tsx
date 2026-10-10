@@ -47,15 +47,18 @@ export default function FacebookPosts({ state, large, selected, onSelect, disabl
 
   return <>
     <div className={`grid gap-4 ${large ? "md:grid-cols-2" : ""}`}>
-      {state.options.map((option) => {
+      {state.options.map((option, index) => {
         const correct = revealed && state.correct_answer === option.key;
+        // On the TV the posts pop in one by one, two seconds apart.
+        const stagger = large && state.phase === "question";
         const expand = canExpand && !!option.image;
         return <button key={option.key} type="button" disabled={!expand && (disabled || !onSelect)}
           aria-pressed={expand ? undefined : selected === option.key} aria-haspopup={expand ? "dialog" : undefined}
           aria-label={expand ? `View Facebook post ${option.key} full size${correct ? " · This was the fake!" : ""}` : undefined}
           onClick={() => expand ? setExpandedKey(option.key) : onSelect?.(option.key)}
-          className={`overflow-hidden rounded-xl border-2 text-left disabled:cursor-default focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-600 ${expand ? "cursor-zoom-in" : ""} ${correct ? "border-emerald-500" : selected === option.key ? "border-rose-600" : "border-rose-100"}`}>
-          <span className={`block px-3 py-2 font-bold ${correct ? "bg-emerald-100 text-emerald-900" : "bg-rose-50 text-rose-800"}`}>{option.key}{correct && " · This was the fake!"}{selected === option.key && !revealed && " · Your team’s pick"}</span>
+          style={stagger ? { animationDelay: `${(index + 1) * 2}s` } : undefined}
+          className={`${stagger ? "option-pop" : ""} ${revealed && state.correct_answer ? (correct ? "answer-winner" : "answer-loser") : ""} overflow-hidden rounded-xl border-2 text-left disabled:cursor-default focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-600 ${expand ? "cursor-zoom-in" : ""} ${correct ? "border-emerald-500" : selected === option.key ? "border-rose-600" : "border-rose-100"}`}>
+          <span className={`block px-3 py-2 font-bold ${correct ? "bg-emerald-100 text-emerald-900" : "bg-rose-50 text-rose-800"}`}>{option.key}{correct && " · This was the fake! 🕵️🎉"}{selected === option.key && !revealed && " · Your team’s pick"}</span>
           {/* Vercel's optimizer rejects the neutral .asset URLs; serve the normalized originals, as in the zoom view. */}
           <Image src={option.image!} alt={`Facebook post ${option.key}`} width={680} height={240} unoptimized className={large ? "block h-auto max-h-72 w-full bg-neutral-800 object-contain" : "block h-auto w-full"} />
         </button>;
