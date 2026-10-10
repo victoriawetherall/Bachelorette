@@ -61,7 +61,6 @@ export default function QuizPage() {
       <p className="rounded-xl bg-rose-100 p-3 text-center text-sm text-rose-800">{isLiv ? "Shout out your pick. It decides the points!" : "Your pre-votes are locked in. Watch Liv choose!"}</p>
       <LiveFeud state={state} />
     </>}
-    <Link href="/quiz/ben" className="block rounded-xl border-2 border-violet-300 bg-violet-50 p-4 text-center font-semibold text-violet-800 hover:bg-violet-100">Playing &ldquo;What Did Ben Say?&rdquo; 🤵 Tap here</Link>
     {teams.length > 0 && <details className="rounded-2xl border border-rose-200 bg-white p-4"><summary className="cursor-pointer font-semibold text-rose-800">All four teams</summary><div className="mt-5"><TeamRoster teams={teams} guestId={guest?.id} /></div></details>}
     <Link href="/?next=%2Fquiz" className="block text-center text-sm font-medium text-rose-600 underline underline-offset-4">Not {guest?.name}? Change your name</Link>
   </main>;
