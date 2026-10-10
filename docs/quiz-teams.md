@@ -5,10 +5,10 @@ the school friends and one of Liv, Deb, Vic or Sue.
 
 | Team | Guests |
 | --- | --- |
-| Team 1 | Georgia P, Sue, Lisa, Claudia |
-| Team 2 | Bri, Liv, Lucy, Bec |
-| Team 3 | Matilda, Deb, Nicole, Georgie S |
-| Team 4 | Nancy, Vic, Bella, Batsho |
+| The Reverse Cowgirls | Georgia P, Sue, Lisa, Claudia |
+| The Rough Riders | Bri, Liv, Lucy, Bec |
+| The Bareback Broncos | Matilda, Deb, Nicole, Georgie S |
+| The Brokeback Mountaineers | Nancy, Vic, Bella, Batsho |
 
 Harry confirmed that Georgia P and “Georgie P” are the same person.
 

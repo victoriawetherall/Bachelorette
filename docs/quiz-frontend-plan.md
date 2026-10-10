@@ -61,9 +61,11 @@ system, rather than introducing individual accounts.
 Real or Fake uses all ten supplied sets of three real Facebook posts and one
 fake. The four A–D positions were shuffled once during preparation and persist
 across refresh and every player's screen. Asset names are opaque, with a common
-extension. Next.js serves all posts through the same image optimization settings
-and the UI renders them at the same width while preserving proportions. The
-original selected files were copied byte-for-byte; no text or artwork was edited.
+extension. All views load the original files directly because Vercel's image
+optimizer rejects the neutral `.asset` URLs. The UI renders posts at the same
+width while preserving proportions. The
+posts are normalized to 680px-wide PNGs with metadata stripped, so format and
+resolution don't give away the fake; no text or artwork was edited.
 The private source mapping lives in ignored `.quiz/facebook-assets.json`.
 The answer key lives only in database seed SQL, never in client question data.
 

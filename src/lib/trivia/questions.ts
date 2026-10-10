@@ -187,10 +187,10 @@ export const FEUD_QUESTIONS: FeudQuestion[] = [
 ];
 
 export const DEFAULT_TEAM_NAMES = [
-  "Disco Divas",
-  "Rodeo Queens",
-  "Bride Tribe",
-  "Last Disco",
+  "The Reverse Cowgirls",
+  "The Rough Riders",
+  "The Bareback Broncos",
+  "The Brokeback Mountaineers",
 ];
 export type SurveyAnswers = Record<string, number>;
 export type RankedAnswer = { option: string; votes: number; rank: number };

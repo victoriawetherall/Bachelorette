@@ -42,7 +42,7 @@ function HostDashboard({ accessKey, lock }: { accessKey: string; lock: () => voi
           <option value="matches">1 point per matching guest</option><option value="adjusted">Adjust for eligible team size</option>
         </select>
       </label>
-      <p className="text-sm text-gray-600">Liv chooses live, so Team 2 has three pre-voters; other teams have four. Adjusted scoring scales each team to four eligible voters. Missing votes earn zero.</p>
+      <p className="text-sm text-gray-600">Liv chooses live, so The Rough Riders have three pre-voters; other teams have four. Adjusted scoring scales each team to four eligible voters. Missing votes earn zero.</p>
       <div className="flex flex-wrap gap-3"><button type="button" disabled={disabled} onClick={() => void action(state.voting_open ? "close_votes" : "open_votes")} className="rounded-xl border border-rose-300 px-4 py-3 font-semibold text-rose-700 disabled:opacity-40">{state.voting_open ? "Close pre-voting" : "Reopen pre-voting"}</button><button type="button" disabled={disabled} onClick={() => void action("start")} className={button}>Lock votes & start question 1</button></div>
     </section>}
     {state && state.phase !== "lobby" && <section className="space-y-4 rounded-2xl border border-rose-200 bg-white p-5">
