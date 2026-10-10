@@ -56,7 +56,8 @@ export default function FacebookPosts({ state, large, selected, onSelect, disabl
           onClick={() => expand ? setExpandedKey(option.key) : onSelect?.(option.key)}
           className={`overflow-hidden rounded-xl border-2 text-left disabled:cursor-default focus-visible:outline focus-visible:outline-4 focus-visible:outline-offset-2 focus-visible:outline-rose-600 ${expand ? "cursor-zoom-in" : ""} ${correct ? "border-emerald-500" : selected === option.key ? "border-rose-600" : "border-rose-100"}`}>
           <span className={`block px-3 py-2 font-bold ${correct ? "bg-emerald-100 text-emerald-900" : "bg-rose-50 text-rose-800"}`}>{option.key}{correct && " · This was the fake!"}{selected === option.key && !revealed && " · Your team’s pick"}</span>
-          <Image src={option.image!} alt={`Facebook post ${option.key}`} width={680} height={240} sizes={large ? "50vw" : "(max-width: 700px) 90vw, 600px"} quality={80} className={large ? "block h-auto max-h-72 w-full bg-neutral-800 object-contain" : "block h-auto w-full"} />
+          {/* Vercel's optimizer rejects the neutral .asset URLs; serve the normalized originals, as in the zoom view. */}
+          <Image src={option.image!} alt={`Facebook post ${option.key}`} width={680} height={240} unoptimized className={large ? "block h-auto max-h-72 w-full bg-neutral-800 object-contain" : "block h-auto w-full"} />
         </button>;
       })}
     </div>
